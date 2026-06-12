@@ -1,4 +1,5 @@
 module verifica_tiro(
+	`include "parametros.v"
     input [3:0] celula, // casa do tabuleiro
 
     output reg acerto,
