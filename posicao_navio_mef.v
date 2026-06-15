@@ -1,25 +1,25 @@
-// prototipo MEF posiçao de navios 
+`include "parametros.v"
 
+// prototipo MEF posiçao de navios 
 module posicao_navio_mef(
 	input clk,
 	input rst,
 	input btn, 
 	
-	output reg[2:0]estado
+	output reg [2:0] estado
 );
 
-
-
 // codigo dos estados
-parameter ESPERA = 3'd0;
+parameter ESPERA      = 3'd0;
 parameter PORTA_AVIAO = 3'd1;
-parameter FRAGATA = 3'd2;
-parameter CORVETA = 3'd3;
-parameter SUBMARINO = 3'd4;
-parameter JOGO = 3'd5;
+parameter FRAGATA     = 3'd2;
+parameter CORVETA     = 3'd3;
+parameter SUBMARINO   = 3'd4;
+parameter JOGO        = 3'd5;
 
-reg[2:0]estado, prox_estado;
-// primeira condiçao 
+reg [2:0] prox_estado; // "estado" estava declarado duas vezes, 1 vez aqui e outra vez la em cima no primeiro reg
+
+//primeira condicao
 always @(posedge clk or posedge rst)
 begin
 	if(rst)
@@ -27,6 +27,7 @@ begin
 	else
 		estado <= prox_estado;
 end
+
 // verificaçao de estados atuais e proximos 
 always @(*)
 begin
@@ -54,8 +55,11 @@ begin
 				prox_estado = JOGO;
 		
 		JOGO:
-			if(btn)
-				prox_estado = JOGO;
+			prox_estado = JOGO; //trava sem precisar da ativacao do botao
+		
+		default:
+			prox_estado = ESPERA; //adicionmado o caso default
 	endcase
 end
+
 endmodule
