@@ -2,7 +2,7 @@ module inserir_coordenadas(
 	input [2:0] linha,
 	input [2:0] coluna,
 	
-	output [5:0] endereço
+	output [5:0] endereco
 );
-	assign endereço = {linha, coluna};
+	assign endereco = {linha, coluna};
 endmodule
