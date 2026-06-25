@@ -1,3 +1,5 @@
+// ACHO QUE PODE DESCARTAR, HÁ COMO FAZER ISSO COM A MEF DO PLAYER 2 MAIS FACILMENTE!
+
 module registrador_tiro(
     input clk,
     input rst,

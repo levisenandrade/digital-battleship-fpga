@@ -1,5 +1,7 @@
 `include "parametros.v"
 
+// DESCARTÁVEL, VERSÃO FINAL ESTÁ EM "MEFPlayer1"
+
 // prototipo MEF posiçao de navios 
 module posicao_navio_mef(
 	input clk,

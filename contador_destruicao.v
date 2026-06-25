@@ -1,6 +1,8 @@
 `include "parametros.v"
 
-module contador_destruicao(
+// CORRIGIR INTEGRAÇÃO COM O MÓDULO "CONTADOR_POSICIONAMENTO" REFORMULADO
+
+module contador_destruicao( 
     input clk,
     input rst,
     input acerto,
