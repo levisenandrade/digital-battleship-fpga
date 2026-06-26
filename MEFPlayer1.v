@@ -23,7 +23,8 @@ module MEFP1(
 	always @(posedge Clk, posedge rst)
 		if(rst) state <= Idle;
 		else state <= nextstate;
-		
+	end
+	
 	always @(*)
 		case(state)
 			Idle: if (PshBttn) nextstate = Idle;
@@ -45,6 +46,7 @@ module MEFP1(
 			default: nextstate = Idle;
 			
 		endcase
+	end
 		
 	assign ModoOprc = (state == GravarInf);
 	assign Finished = (state == Done);
