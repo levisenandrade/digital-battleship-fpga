@@ -1,4 +1,4 @@
-\\Este módulo gera apenas um pulso quando o botão é pressionado.
+// Este módulo gera apenas um pulso quando o botão é pressionado.
 module detector_borda(
     input CLK,
     input RST,
