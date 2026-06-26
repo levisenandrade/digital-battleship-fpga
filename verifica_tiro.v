@@ -33,22 +33,22 @@ always @(*) begin
 
     case(cor)
 
-        BRANCO: begin
+        `BRANCO: begin
             // Navio intacto
             acerto = 1'b1;
         end
 
-        AZUL: begin
+        `AZUL: begin
             // Água nunca atingida
             erro = 1'b1;
         end
 
-        VERMELHO: begin
+        `VERMELHO: begin
             // Navio já atingido
             repetido = 1'b1;
         end
 
-        AMARELO: begin
+        `AMARELO: begin
             // Água já atingida
             repetido = 1'b1;
         end
