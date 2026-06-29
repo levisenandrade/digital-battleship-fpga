@@ -79,5 +79,5 @@ module contador_posicionamento(
 		  endcase
 	end
 
-	assign pronto = (state == Done);
+	assign pronto = (contPA == 2'd5 && contFG == 2'd4 && contCT == 2'd3 && contSM == 2'd2);
 endmodule

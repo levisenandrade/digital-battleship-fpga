@@ -27,7 +27,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	.rst(RST),
 	.inf(),
 	.modo(),
-	.coord(Cord));
+	.coord(Coordenada));
 	
 	
 	MEFPlayer1 instancia_mefp1 (
@@ -39,11 +39,11 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	 // PSHBTTN COM DETECTOR DE BORDA E DEBOUNCER
 	 // A LÓGICA TÁ NORMAL, ATIVO -> 1
 	 
-   .MinAtingido(),
+   .MinAtingido(ContDone),
 	// SINAL DE QUE OS 4 TIPOS DE BARCOS JÁ FORAM COLOCADOS.
 	// MÓDULO DESSA VERIFICAÇÃO ESTÁ SENDO FEITO
 	 
-   .eBranco(),
+   .eBranco(eBranco),
 	// SAÍDA DE UM MÓDULO QUE VERIFICA SE
 	// O VALOR NA MEMÓRIA É BRANCO.
 	 
@@ -67,13 +67,13 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
     .PshBttn(),
 	 // PSHBTTN COM DETECTOR DE BORDA E DEBOUNCER
 	 
-    .ExisteNavPts(),
+    .ExisteNavPts( ContDone /*&& VERIFICARPONTOS*/ ),
 	 // SAÍDA DE UM MóDULO QUE VERIFICA SE PONTOS/NAVIOS != 0
 	 
-	 .rstAmFeito(),
+	 .rstAmFeito(AmProcessDone),
 	 // SAÍDA DO MÓDULO DO PROCESSO DE RESET DO AMARELO!
 	 
-    .CorNaMemoria(),
+    .CorNaMemoria(eBranco),
 	 // Se BRANCO, então 1, Senão entrada deve ser 0 
 	 
     .rst(RST), 
@@ -87,7 +87,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	 .RegUltTiro(TglReg6BITS), 
 	 // Ativa o REG de guardar a última coordenada de tiro
 	 
-	 .RstAmProcess(),
+	 .RstAmProcess(StartAmRstProc),
 	 // Toggle para o módulo do reset do amarelo
 	 
     .EscolhaCor(),
@@ -99,6 +99,17 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
     //.SomaSub() Esse sinal foi reutilizado do outro, já que ser vermelho = soma/ganhar ponto.
 	 
 	 );
+	 
+	wire eBranco;
+	and(eBranco, Saida[3], Saida[2]);
+	
+	resetDoAmarelo rstAm(
+	.toggle(StartAmRstProc),
+	.coord(Cord),
+	.SaidaCord(Coordenada),
+	.Done(AmProcessDone)
+	);
+	
 	 
 	// LASTTRY se trata do último tiro feito pelo atacante,
 	// Isso é pra resetar o amarelo quando chegar no estado dele!
@@ -114,6 +125,8 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 		.modo(TglReg6BITS));
 
 	
+	// MEF MAIOR DEVE CONTROLAR O TOGGLE e DONE
+	
 	contador_posicionamento Cont(
 		.clk(CLK),
 		.rst(RST),
@@ -121,7 +134,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 		.Toggle(),
 		// Toggle para contar +1!
 		
-		.pronto(),
+		.pronto(ContDone),
 		// Sinal de DONE
 		
 		.contPA(),
@@ -137,7 +150,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 		.reset(RST), 
 		.write_enable(Enable),
 		.data({Saida[3], Saida[2]}),
-		.address(Cord), // Linha[5:3], Coluna[2:0]
+		.address(Coordenada), // Linha[5:3], Coluna[2:0]
 	
 		//OUTPUT
 		.v_sync(Vsync), 
