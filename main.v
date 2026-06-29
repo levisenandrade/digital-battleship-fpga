@@ -1,7 +1,6 @@
-module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, mod, Enable);
-	input CLK, RST, mod, Enable;
+module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
+	input CLK, RST, Enable;
 	input [5:0]Cord;
-	input	[1:0] Inp;
 	output [3:0]Saida; // Valor no LED pra verificação
 	output [3:0] R;
 	output [3:0] G;
@@ -20,21 +19,119 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, mod, Enable);
 	 
 	 not(d, halfClock);
 	
-	
-	// Adicionando a entrada na memória
-	// Tipo de cor travado em Branco, com barco a escolha por meio das chaves
+	// MEMÓRIA GERAL
 	
 	Memoria Mem(
 	.S(Saida), // Cor[1], Cor[0], Tipo[1], Tipo[0]
 	.clk(CLK),
 	.rst(RST),
-	.inf({1'b1, 1'b1, Inp[0], Inp[1]}),
-	.modo(mod),
+	.inf(),
+	.modo(),
 	.coord(Cord));
 	
 	
-	VGA_interface 
-	u1(
+	MEFPlayer1 instancia_mefp1 (
+	
+	.Toggle(),
+	// Dá o start da MEF
+	
+   .PshBttn(),
+	 // PSHBTTN COM DETECTOR DE BORDA E DEBOUNCER
+	 // A LÓGICA TÁ NORMAL, ATIVO -> 1
+	 
+   .MinAtingido(),
+	// SINAL DE QUE OS 4 TIPOS DE BARCOS JÁ FORAM COLOCADOS.
+	// MÓDULO DESSA VERIFICAÇÃO ESTÁ SENDO FEITO
+	 
+   .eBranco(),
+	// SAÍDA DE UM MÓDULO QUE VERIFICA SE
+	// O VALOR NA MEMÓRIA É BRANCO.
+	 
+   .Clk(CLK),
+   .rst(RST),
+	 
+   .ModoOprc(MOOPMEF1),
+	// MODO DE GRAVAÇÃO OU LEITURA
+	// VAI SER USADO COMO UM "ADD +1"
+	// NO CONTADOR DO MÍNIMO DE BARCOS
+	 
+   .Finished()
+	// SINAL DE DONE.
+	);
+	
+	MEFPlayer2 instancia_mefplayer2 (
+	
+    .Tgl(),
+	 // SAIDA DE TOGGLE DA MEF MAIOR
+	 
+    .PshBttn(),
+	 // PSHBTTN COM DETECTOR DE BORDA E DEBOUNCER
+	 
+    .ExisteNavPts(),
+	 // SAÍDA DE UM MóDULO QUE VERIFICA SE PONTOS/NAVIOS != 0
+	 
+	 .rstAmFeito(),
+	 // SAÍDA DO MÓDULO DO PROCESSO DE RESET DO AMARELO!
+	 
+    .CorNaMemoria(),
+	 // Se BRANCO, então 1, Senão entrada deve ser 0 
+	 
+    .rst(RST), 
+    .Clk(CLK), 
+	 
+    .ModoMem(),
+	 // Saída pra o módulo de Memória, 
+	 // isso deve tá ligado à MEF maior, 
+	 // já que temos a mesma saída na MEFP1
+	 
+	 .RegUltTiro(TglReg6BITS), 
+	 // Ativa o REG de guardar a última coordenada de tiro
+	 
+	 .RstAmProcess(),
+	 // Toggle para o módulo do reset do amarelo
+	 
+    .EscolhaCor(),
+	 // Saída = 1 é vermelho, Se saída = 0, é amarelo
+	 
+	 .Done()
+	 // Sinal de finalizado
+	 
+    //.SomaSub() Esse sinal foi reutilizado do outro, já que ser vermelho = soma/ganhar ponto.
+	 
+	 );
+	 
+	// LASTTRY se trata do último tiro feito pelo atacante,
+	// Isso é pra resetar o amarelo quando chegar no estado dele!
+	// Devemos verificar se realmente é amarelo pra resetar, senão
+	// não fazemos nada e voltamos como DONE.
+	// Isso é por causa da primeira tentativa, que iniciará sem cor amarela registrada.
+	
+	Registrador6Bits reg_inst (
+		.Q(lastTry), 
+		.Inp(Cord),
+		.rst(rst),
+		.clk(CLK),
+		.modo(TglReg6BITS));
+
+	
+	contador_posicionamento Cont(
+		.clk(CLK),
+		.rst(RST),
+		
+		.Toggle(),
+		// Toggle para contar +1!
+		
+		.pronto(),
+		// Sinal de DONE
+		
+		.contPA(),
+		.contFG(),
+		.contCT(),
+		.contSM()
+		// CONTADORES DE CADA TIPO DE BARCO
+		);
+	
+	VGA_interface u1(
 		//INPUT
 		.clk_25mhz(halfClock), 
 		.reset(RST), 

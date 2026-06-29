@@ -1,12 +1,11 @@
-module MEFP1(
+module MEFPlayer1(
 	input PshBttn,
+	input Toggle,
 	input MinAtingido,
-	input Branco,
+	input eBranco,
 	input Clk,
 	input rst,
 	output ModoOprc,
-	output reg [2:0] state,
-	output reg [2:0] nextstate,
 	//output [3:0]Inf, A informaçao a ser colocada na memoria sera feita por outro modulo
 	//output AddUm, O sinal sera ativo somente quando o ModoOprc ser 1, ou seja, estado de add informaçao
 	output Finished);
@@ -18,25 +17,26 @@ module MEFP1(
 	parameter GravarInf = 3'b100;
 	parameter Done = 3'b101;
 	
-	//reg [2:0]nextstate; //[2:0] state
+	reg [2:0]nextstate;
+	reg [2:0]state;
 	
-	always @(posedge Clk, posedge rst)
+	always @(posedge Clk, posedge rst) begin
 		if(rst) state <= Idle;
 		else state <= nextstate;
 	end
 	
-	always @(*)
+	always @(*) begin
 		case(state)
-			Idle: if (PshBttn) nextstate = Idle;
-			else nextstate = VerifQtMin;
+			Idle: if (Toggle) nextstate = VerifQtMin;
+			else nextstate = Idle;
 			
 			VerifQtMin: if(MinAtingido) nextstate = Done;
 			else nextstate = RcbCord;
 			
-			RcbCord: if(PshBttn) nextstate = RcbCord;
-			else nextstate = CorVerif;
+			RcbCord: if(PshBttn) nextstate = CorVerif;
+			else nextstate = RcbCord;
 			
-			CorVerif: if(Branco) nextstate = RcbCord;
+			CorVerif: if(eBranco) nextstate = RcbCord;
 			else nextstate = GravarInf;
 			
 			GravarInf: nextstate = VerifQtMin;

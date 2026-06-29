@@ -1,11 +1,14 @@
 module MEFPlayer2(
-	input Tgl, PshBttn,
-	input ExisteNavPts;
+	input Tgl, PshBttn, rstAmFeito,
+	input ExisteNavPts,
 	input CorNaMemoria,
 	input rst, Clk,
 	output ModoMem,
+	output RegUltTiro,
+	output RstAmProcess,
 	output EscolhaCor,
-	output SomaSub;
+	output Done
+	//output SomaSub
 );
 
 	parameter Idle = 3'd0;
@@ -19,12 +22,12 @@ module MEFPlayer2(
 	reg [2:0]state;
 	reg [2:0]nextstate;
 	
-	always @(posedge Clk, posedge rst)
+	always @(posedge Clk, posedge rst) begin
 		if(rst) state <= Idle;
 		else state <= nextstate;
 	end
 	
-	always @(*)
+	always @(*) begin
 		case(state)
 			Idle: if (Tgl) nextstate = VerifNavPts;
 			else nextstate = Idle;
@@ -35,7 +38,8 @@ module MEFPlayer2(
 			ReceberCoordUsr: if (PshBttn) nextstate = ResetAmarelo;
 			else nextstate = ReceberCoordUsr;
 			
-			ResetAmarelo: nextstate = VerificarCorMem;
+			ResetAmarelo: if (rstAmFeito) nextstate = VerificarCorMem;
+			else nextstate = ResetAmarelo;
 			
 			VerificarCorMem: if(CorNaMemoria) nextstate = Vermelho;
 			else nextstate = Amarelo;
@@ -43,11 +47,16 @@ module MEFPlayer2(
 			Vermelho: nextstate = VerifNavPts;
 			
 			Amarelo: nextstate = VerifNavPts;
+			
+			default: nextstate = Idle;
 		endcase
 	end
 	
-	assign ModoMem = (state == Vermelho, state == Amarelo, state == ResetAmarelo);
+	assign ModoMem = (state == Vermelho || state == Amarelo || state == ResetAmarelo);
+	assign RegUltTiro = (nextstate == ResetAmarelo);
+	assign RstAmProcess = (state == ResetAmarelo);
 	assign EscolhaCor = (state == Vermelho);
-	assign SomaSub = (state == Vermelho)
+	assign Done = (state == VerifNavPts && !ExisteNavPts);
+	//assign SomaSub = (state == Vermelho);
 	
 endmodule
