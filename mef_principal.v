@@ -3,6 +3,8 @@ module mef_principal(
     input rst,
     input concluido1,  // vem da MEFPlayer1
     input concluido2,  // vem da MEFPlayer2
+	 input rstFeito,
+	 output startReset,
     output TglP1,      // pulso único pra MEFPlayer1
     output TglP2       // pulso único pra MEFPlayer2
 );
@@ -31,16 +33,23 @@ module mef_principal(
     
     always @(*) begin
         case(state)
-            inicio:         nextstate = posicionamento;
+		  
+            inicio: if (rstFeito) nextstate = posicionamento;
+				else nextstate = inicio;
+				
             posicionamento: if(concluido1) nextstate = tiro;
-                            else nextstate = posicionamento;
-            tiro:           if(concluido2) nextstate = FimDeJogo;
-                            else nextstate = tiro;
-            FimDeJogo:      nextstate = FimDeJogo;
-            default:        nextstate = inicio;
+            else nextstate = posicionamento;
+				
+            tiro: if(concluido2) nextstate = FimDeJogo;
+            else nextstate = tiro;
+				
+            FimDeJogo: nextstate = FimDeJogo;
+				
+            default: nextstate = inicio;
         endcase
     end
     
+	 assign startReset = (state == inicio);
     assign TglP1 = (state == inicio);
     assign TglP2 = (state == posicionamento) && concluido1;
     

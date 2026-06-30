@@ -13,7 +13,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	
 	FlipFlopD FF0(
     .clk(CLK),
-    .rst(rst),
+    .rst(RST),
     .d(d),
     .q(halfClock));
 	 
@@ -30,9 +30,31 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	.coord(Coordenada));
 	
 	
+	// MEF GERAL
+	
+	wire DoneP1, DoneP2;
+	
+	mef_principal MEFGERAL(
+	.Clk(CLK),
+	.rst(RST),
+	
+	// Esses sinais são os Dones das MEFS 1 e 2
+	.concluido1(DoneP1),
+	.concluido2(DoneP2),
+	
+	// Esses sinais serão baseados no processo de reset do sistema, ou seja, pintar tudo de azul!
+	.rstFeito( ),
+	.startReset( ),
+	
+	// Esses Sinais são os toggles de início das MEFS 1 e 2
+	.TglP1(TgglP1),
+	.TglP2(TgglP2));
+	
+	wire TgglP1, TgglP2;
+	
 	MEFPlayer1 instancia_mefp1 (
 	
-	.Toggle(),
+	.Toggle(TgglP1),
 	// Dá o start da MEF
 	
    .PshBttn(),
@@ -55,13 +77,13 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	// VAI SER USADO COMO UM "ADD +1"
 	// NO CONTADOR DO MÍNIMO DE BARCOS
 	 
-   .Finished()
+   .Finished(DoneP1)
 	// SINAL DE DONE.
 	);
 	
 	MEFPlayer2 instancia_mefplayer2 (
 	
-    .Tgl(),
+    .Tgl(TgglP2),
 	 // SAIDA DE TOGGLE DA MEF MAIOR
 	 
     .PshBttn(),
@@ -90,10 +112,10 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	 .RstAmProcess(StartAmRstProc),
 	 // Toggle para o módulo do reset do amarelo
 	 
-    .EscolhaCor(),
+    .EscolhaCor(CollorSelection),
 	 // Saída = 1 é vermelho, Se saída = 0, é amarelo
 	 
-	 .Done()
+	 .Done(DoneP2)
 	 // Sinal de finalizado
 	 
     //.SomaSub() Esse sinal foi reutilizado do outro, já que ser vermelho = soma/ganhar ponto.
@@ -110,6 +132,24 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	.Done(AmProcessDone)
 	);
 	
+	mux1bit Mx1(
+	.A(1'b0),
+	.B(1'b1),
+	.slc(CollorSelection),
+	.S());
+	
+	mux1bit Mx2(
+	.A(1'b0),
+	.B(1'b0),
+	.slc(CollorSelection),
+	.S());
+	
+	// TEMOS QUE PEGAR ESSA SAÍDA DOS MUXS, COLOCAR EM
+	// OUTRO MUX QUE SÓ FUNCIONARÁ QUANDO O TGL DA
+	// MEFP2 ESTIVER ON!
+	
+	wire [5:0] lastTry;
+	wire [5:0] Coordenada;
 	 
 	// LASTTRY se trata do último tiro feito pelo atacante,
 	// Isso é pra resetar o amarelo quando chegar no estado dele!
@@ -120,7 +160,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	Registrador6Bits reg_inst (
 		.Q(lastTry), 
 		.Inp(Cord),
-		.rst(rst),
+		.rst(RST),
 		.clk(CLK),
 		.modo(TglReg6BITS));
 
