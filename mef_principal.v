@@ -50,7 +50,7 @@ module mef_principal(
     end
     
 	 assign startReset = (state == inicio);
-    assign TglP1 = (state == inicio);
-    assign TglP2 = (state == posicionamento) && concluido1;
+    assign TglP1 = (state == posicionamento);
+    assign TglP2 = (state == tiro);
     
 endmodule
