@@ -1,6 +1,6 @@
 module MEFPlayer2(
 	input Tgl, PshBttn, rstAmFeito,
-	input ExisteNavPts,
+	input ExisteNavPts, writeEnbl,
 	input CorNaMemoria,
 	input rst, Clk,
 	output ModoMem,
@@ -52,11 +52,12 @@ module MEFPlayer2(
 		endcase
 	end
 	
-	assign ModoMem = (state == Vermelho || state == Amarelo || state == ResetAmarelo);
+	assign ModoMem = (state == Vermelho || state == Amarelo || (state == ResetAmarelo && writeEnbl));
 	assign RegUltTiro = (nextstate == ResetAmarelo);
 	assign RstAmProcess = (state == ResetAmarelo);
 	assign EscolhaCor = (state == Vermelho);
 	assign Done = (state == VerifNavPts && !ExisteNavPts);
+	assign ToggleSomSUb = (state == Vermelho || state == Amarelo);
 	//assign SomaSub = (state == Vermelho);
 	
 endmodule
