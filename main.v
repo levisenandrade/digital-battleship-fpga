@@ -6,6 +6,13 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	output [3:0] G;
 	output [3:0] B;
 	output Vsync, Hsync;
+
+	// sinal de game over
+	
+	wire game_over; // pontos chegam a 0 - Levi
+	wire destPA, destFG, destCT, destSB; // todos os navios foram destruidos - Levi
+	
+	assign ExisteNavPts = !(destPA & destFG & destCT & destSB) & !game_over; //verifica se houve game over ou se houve a destruição de todos os navios - Levi
 	
 	// Divisor de frequência improvisado
 	
