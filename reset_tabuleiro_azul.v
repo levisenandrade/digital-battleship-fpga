@@ -1,3 +1,5 @@
+`include "parametros.v"
+
 module reset_tabuleiro_azul(
     input clk,
     input rst,

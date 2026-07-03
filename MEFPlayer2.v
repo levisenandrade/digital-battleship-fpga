@@ -3,7 +3,7 @@ module MEFPlayer2(
 	input ExisteNavPts, writeEnbl,
 	input CorNaMemoria,
 	input rst, Clk,
-	output ModoMem,
+	output ModoMem, ToggleSomSUb,
 	output RegUltTiro,
 	output RstAmProcess,
 	output EscolhaCor,

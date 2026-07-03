@@ -5,8 +5,8 @@
 module contador_pontuacao(
     input clk,
     input rst,
+	 input toggle,
     input acerto,
-    input erro,
     input destruiu,
     input [1:0] tipo_navio,
 
@@ -41,7 +41,7 @@ always @(posedge clk or posedge rst) begin
         pontuacao <= PONTUACAO_INICIAL;
         game_over <= 1'b0;
     end
-    else if(!game_over) begin
+    else if(toggle && !game_over) begin
 
         if(destruiu) begin
             pontuacao <= pontuacao + 8'd1 + bonus;
@@ -49,7 +49,7 @@ always @(posedge clk or posedge rst) begin
         else if(acerto) begin
             pontuacao <= pontuacao + 8'd1;
         end
-        else if(erro) begin
+        else begin
             if(pontuacao <= 8'd1) begin
                 pontuacao <= 8'd0;
                 game_over <= 1'b1;

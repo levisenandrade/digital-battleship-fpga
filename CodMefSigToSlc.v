@@ -1,5 +1,5 @@
 module CodMefSigToSlc(
-	input A, B, C,
+	input A, B, C, D,
 	output [1:0]Slc
 );
 

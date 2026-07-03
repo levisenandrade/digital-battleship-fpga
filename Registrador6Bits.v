@@ -46,8 +46,8 @@ module Registrador6Bits(Q, Inp, rst, clk, modo);
 
 	 
 	 mux4Inp1Bit Mx0(
-	 .S(qff[0:3]),
-	 .A(Q[0:3]),
+	 .S({qff[3], qff[2], qff[1], qff[0]}),
+	 .A({Q[3], Q[2], Q[1], Q[0]}),
 	 .B(Inp),
 	 .slc(modo));
 	 

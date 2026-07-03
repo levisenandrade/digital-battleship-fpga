@@ -1,3 +1,5 @@
+`include "parametros.v"
+
 module contador_posicionamento(
     input clk,
     input rst,
@@ -12,9 +14,9 @@ always @(posedge clk or posedge rst) begin
 
     if(rst) begin
 
-        tipo_navio        <= `PORTA_AVIOES;
-        casas_restantes   <= 3'd5;
-        fim_posicionamento<= 1'b0;
+		tipo_navio <= `PORTA_AVIOES;
+		casas_restantes <= 3'd5;
+		fim_posicionamento <= 1'b0;
 
     end
 

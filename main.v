@@ -37,7 +37,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
     .A(4'b0100),
     .B({1'b1, 1'b1, TipoDeNavio[1], TipoDeNavio[0]}),
     .C({SaidaCorMef2[1],SaidaCorMef2[0],Saida[1], Saida[0]}),
-    .D(Cor[1], Cor[0],Saida[1], Saida[0]),
+    .D({Cor[1], Cor[0],Saida[1], Saida[0]}),
     .slc(Slc),
     .S(Inf));
 	 
@@ -126,7 +126,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
     .PshBttn(),
 	 // PSHBTTN COM DETECTOR DE BORDA E DEBOUNCER
 	 
-    .ExisteNavPts(/*EXISTEMNAVIOS && VERIFICARPONTOS*/ ),
+    .ExisteNavPts(~TodosBarcosDestruidos && game_over),
 	 // SAÍDA DE UM MóDULO QUE VERIFICA SE PONTOS/NAVIOS != 0
 	 
 	 .rstAmFeito(AmProcessDone),
@@ -148,6 +148,9 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	 .RegUltTiro(TglReg6BITS), 
 	 // Ativa o REG de guardar a última coordenada de tiro
 	 
+	 .ToggleSomSUb(TGLContDest),
+	 // Toggle pra contador de pontuação rodar
+	 
 	 .RstAmProcess(StartAmRstProc),
 	 // Toggle para o módulo do reset do amarelo
 	 
@@ -164,6 +167,67 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	wire eBranco;
 	and(eBranco, Saida[3], Saida[2]);
 	
+	// CONT DESTRUIÇAO ----------------------------------------
+	wire destPA, destFG, destCT, destSB;
+	
+	contador_destruicao contDestruicao(
+    .clk(CLK),
+    .rst(RST),
+    .acerto(CollorSelection),
+    .tipo_navio({Saida[1], Saida[0]}),
+    .destPA(destPA),
+    .destFG(destFG),
+    .destCT(destCT),
+    .destSB(destSB));
+	 
+	 wire pulsoPA, pulsoFG, pulsoCT, pulsoSB;
+	 
+	 detector_borda destPAEdgDet(
+    .CLK(CLK),
+    .RST(RST),
+    .Entrada(destPA),
+    .Saida(pulsoPA));
+	 
+	 detector_borda destFGEdgDet(
+    .CLK(CLK),
+    .RST(RST),
+    .Entrada(destFG),
+    .Saida(pulsoFG));
+	 
+	 detector_borda destCTEdgDet(
+    .CLK(CLK),
+    .RST(RST),
+    .Entrada(destCT),
+    .Saida(pulsoCT));
+	 
+	 detector_borda destSBEdgDet(
+    .CLK(CLK),
+    .RST(RST),
+    .Entrada(destSB),
+    .Saida(pulsoSB));
+	 
+	 
+	 or(PulsoDestruicao, pulsoPA, pulsoFG, pulsoCT, pulsoSB);
+	// --------------------------------------------------------
+	
+	wire TodosBarcosDestruidos;
+	and(TodosBarcosDestruidos, destPA, destFG, destCT, destSB);
+	
+	// CONT PONTUAÇAO -----------------------------------------
+	wire TGLContDest, game_over;
+	wire [7:0] pontuacao;
+	
+	contador_pontuacao contPont(
+    .clk(CLK),
+    .rst(RST),
+    .toggle(TGLContDest),
+    .acerto(CollorSelection),
+    .destruiu(PulsoDestruicao), // SINAL DE DESTRUIU DURA APENAS UM CICLO DE CLOCK!
+    .tipo_navio({Saida[1], Saida[0]}),
+    .pontuacao(pontuacao),
+    .game_over(game_over));
+	 // --------------------------------------------------------
+	
 	wire WAMMODE;
 	wire [1:0]Cor;
 	
@@ -178,7 +242,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	
 	mux2para1_6bits SelecaoCord(
     .A(Cord),
-    .B(CordAmRst),
+    .B(lastTry),
     .slc(StartAmRstProc),
     .S(Coordenada)
 	);
@@ -225,12 +289,13 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	// MEF MAIOR DEVE CONTROLAR O TOGGLE e DONE
 	
 	wire [1:0]TipoDeNavio;
+	wire PulsoDestruicao;
 	
 	contador_posicionamento Cont(
 		.clk(CLK),
 		.rst(RST),
 		
-		// Toggle para contar +1!
+		// Toggle para contar +1! ISSO É O PUSH BUTTON COM DBC/EDGDETECTOR
 		.confirmar(),	
 		
 		.tipo_navio(TipoDeNavio),
@@ -252,8 +317,8 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 		//INPUT
 		.clk_25mhz(halfClock), 
 		.reset(RST), 
-		.write_enable(Enable),
-		.data({Saida[3], Saida[2]}),
+		.write_enable(modo),
+		.data({Inf[3], Inf[2]}),
 		.address(Coordenada), // Linha[5:3], Coluna[2:0]
 	
 		//OUTPUT
