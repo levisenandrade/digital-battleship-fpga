@@ -11,19 +11,21 @@ module resetDoAmarelo(
     reg NextDone;
 
     always @(posedge clk) begin
-        // Em blocos síncronos, usamos sempre '<=' para atualizar os registradores
         Done <= NextDone; 
 
         if(toggle) begin
-            if(info == AMARELO) begin
+            if(info == `AMARELO) begin
                 WriteMode <= 1'b1;
-                cor       <= AZUL;
+                cor       <= `AZUL;
                 NextDone  <= 1'b1; // Alimenta o registrador para o próximo ciclo
+                            // acho que não precisamos do NextDone aqui, poderia ser o Done logo, não é não? - Levi
+                
             end
             else begin
                 WriteMode <= 1'b0;
                 cor       <= info;
                 NextDone  <= 1'b1; // Se não for amarelo, também avança
+                // mesma coisa aqwui, acho que fecha o end e logo depois vai para o Done <= 1'b1;
             end
         end
         else begin
