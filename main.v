@@ -6,9 +6,12 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	output [3:0] G;
 	output [3:0] B;
 	output Vsync, Hsync;
-	wire ExisteNavPts;
-	// Divisor de frequência improvisado
+
 	
+	wire BotaoDbc, BotaoPulso;
+	wire ExisteNavPts;
+	
+	// Divisor de frequência improvisado
 	wire halfClock, d;
 	
 	FlipFlopD FF0(
@@ -59,8 +62,6 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	
 	wire [1:0]Slc;
 	wire MOOPMEF1, MOOPMEF2;
-	// -------------------------------------------------------------------
-
 	
 	// MEFGERAL --------------------------------------------------------------------------------
 	
@@ -85,14 +86,13 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	
 	wire TgglP1, TgglP2;
 	
-	
 	// MEFP1 --------------------------------------------------------------------------------
 	MEFPlayer1 instancia_mefp1 (
 	
 	.Toggle(TgglP1),
 	// Dá o start da MEF
 	
-   .PshBttn(),
+   .PshBttn(BotaoPulso),
 	 // PSHBTTN COM DETECTOR DE BORDA E DEBOUNCER
 	 // A LÓGICA TÁ NORMAL, ATIVO -> 1
 	 
@@ -116,14 +116,13 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	// SINAL DE DONE.
 	);
 	
-	
 	// MEFP1 --------------------------------------------------------------------------------
 	MEFPlayer2 instancia_mefplayer2 (
 	
     .Tgl(TgglP2),
 	 // SAIDA DE TOGGLE DA MEF MAIOR
 	 
-    .PshBttn(),
+    .PshBttn(BotaoPulso),
 	 // PSHBTTN COM DETECTOR DE BORDA E DEBOUNCER
 	 
     .ExisteNavPts(ExisteNavPts),
@@ -287,7 +286,6 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 		.clk(CLK),
 		.modo(TglReg6BITS));
 
-	
 	// MEF MAIOR DEVE CONTROLAR O TOGGLE e DONE
 	
 	wire [1:0]TipoDeNavio;
@@ -298,7 +296,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 		.rst(RST),
 		
 		// Toggle para contar +1! ISSO É O PUSH BUTTON COM DBC/EDGDETECTOR
-		.confirmar(),	
+		.confirmar(BotaoPulso),	
 		
 		.tipo_navio(TipoDeNavio),
 		
@@ -329,6 +327,20 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 		.R(R),
 		.G(G),
 		.B(B)
+	);
+
+	debounce Dbc(
+	    .CLK(CLK),
+	    .RST(RST),
+		.Botao(Enable), // enable é o KEY[1]
+	    .Saida(BotaoDbc)
+	);
+	
+	detector_borda EdgDet(
+	    .CLK(CLK),
+	    .RST(RST),
+	    .Entrada(BotaoDbc),
+	    .Saida(BotaoPulso)
 	);
 	
 
