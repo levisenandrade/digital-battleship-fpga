@@ -1,4 +1,4 @@
-module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
+module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HEX4, HEX5);
 	input CLK, RST, Enable;
 	input [5:0]Cord;
 	output [3:0]Saida; // Valor no LED pra verificação
@@ -6,10 +6,19 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	output [3:0] G;
 	output [3:0] B;
 	output Vsync, Hsync;
-
+	output [6:0] HEX0; // coluna (números 1 ~ 8)
+	output [6:0] HEX1; // linha (letra A ~ H)
+	output [6:0] HEX4; // pontuação unidade
+	output [6:0] HEX5; // pontuação dezena
 	
 	wire BotaoDbc, BotaoPulso;
 	wire ExisteNavPts;
+
+	wire acerto;
+	wire erro;
+	wire repetido;
+	wire [1:0] TipoVerifica;
+	wire game_over;
 	
 	// Divisor de frequência improvisado
 	wire halfClock, d;
@@ -173,7 +182,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
     .clk(CLK),
     .rst(RST),
     .acerto(CollorSelection),
-    .tipo_navio({Saida[1], Saida[0]}),
+	.tipo_navio(TipoVerifica),
     .destPA(destPA),
     .destFG(destFG),
     .destCT(destCT),
@@ -214,7 +223,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	assign ExisteNavPts = !(TodosBarcosDestruidos) & !game_over; //verifica se houve game over ou se houve a destruição de todos os navios - Levi
 	
 	// CONT PONTUAÇAO -----------------------------------------
-	wire TGLContDest, game_over;
+	wire TGLContDest;
 	wire [7:0] pontuacao;
 	
 	contador_pontuacao contPont(
@@ -223,7 +232,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
     .toggle(TGLContDest),
     .acerto(CollorSelection),
     .destruiu(PulsoDestruicao), // SINAL DE DESTRUIU DURA APENAS UM CICLO DE CLOCK!
-    .tipo_navio({Saida[1], Saida[0]}),
+	.tipo_navio(TipoVerifica),
     .pontuacao(pontuacao),
     .game_over(game_over));
 	 // --------------------------------------------------------
@@ -343,5 +352,28 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	    .Saida(BotaoPulso)
 	);
 	
+	verifica_tiro VerTiro(
+	    .celula(Saida),
+	    .acerto(acerto),
+	    .erro(erro),
+	    .repetido(repetido),
+	    .tipo_navio(TipoVerifica)
+	);
+
+	display_letra DisplayLinha(
+	    .letra(Cord[5:3]),
+	    .seg(HEX1)
+	);
+	
+	display_numero DisplayColuna(
+	    .numero({1'b0, Cord[2:0]}),
+	    .seg(HEX0)
+	);
+	
+	display_pontuacao DisplayPont(
+	    .pontuacao(pontuacao[5:0]),
+	    .HEX0(HEX4),
+	    .HEX1(HEX5)
+	);
 
 endmodule
