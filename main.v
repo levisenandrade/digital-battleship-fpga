@@ -14,9 +14,6 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	wire BotaoDbc, BotaoPulso;
 	wire ExisteNavPts;
 
-	wire acerto;
-	wire erro;
-	wire repetido;
 	wire [1:0] TipoVerifica;
 	wire game_over;
 	
@@ -31,6 +28,9 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	 
 	 not(d, halfClock);
 	
+	assign TipoVerifica[0] = Saida[2];
+	assign TipoVerifica[1] = Saida[3];
+	
 	// MEMÓRIA GERAL
 	
 	Memoria Mem(
@@ -39,7 +39,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	.rst(RST),
 	.inf(Inf),
 	.modo(Modo),
-	.coord(Coordenada));
+	.coord(CoordenadaFinal));
 	
 	// MUX DE CONTROLE GERAL DA MEMORIA ---------------------------------
 	wire Modo;
@@ -66,8 +66,24 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
     .B(TgglP2),
     .C(TgglP1),
 	 .D(AzulRst),
-    .Slc(Slc)
-	);
+    .Slc(Slc));
+	
+	mux2para1_6bits CoordAzulRst(
+    .A(Coordenada),
+    .B(ContadorRst),
+    .slc(AzulRst),
+    .S(CoordenadaFinal));
+	 
+	 wire RstInicialFeito;
+	 wire [5:0]ContadorRst;
+	 
+	 contador_64_blocos instancia_contador_64_blocos(
+    .clk(CLK),
+    .rst(RST),
+    .pintar(AzulRst),
+    .q(ContadorRst),
+    .done(RstInicialFeito)
+);
 	
 	wire [1:0]Slc;
 	wire MOOPMEF1, MOOPMEF2;
@@ -86,8 +102,11 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	.concluido2(DoneP2),
 	
 	// Esses sinais serão baseados no processo de reset do sistema, ou seja, pintar tudo de azul!
-	.rstFeito( ),
-	.startReset(AzulRst),
+	.rstFeito(RstInicialFeito),
+	.startReset(AzulRst),  // Esse sinal serve de toggle pra um contador de 0-63
+	// O contador vai passar em todas as casas e vai setar a cor predefinida em azul.
+	// Esse sinal tbm servirá como um Slc no mux das coordenadas, sendo o valor do contador 
+	// como a coordenada a ser alterada. - Simeony
 	
 	// Esses Sinais são os toggles de início das MEFS 1 e 2
 	.TglP1(TgglP1),
@@ -182,7 +201,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
     .clk(CLK),
     .rst(RST),
     .acerto(CollorSelection),
-	.tipo_navio(TipoVerifica),
+	 .tipo_navio(TipoVerifica),
     .destPA(destPA),
     .destFG(destFG),
     .destCT(destCT),
@@ -328,7 +347,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 		.reset(RST), 
 		.write_enable(Modo),
 		.data({Inf[3], Inf[2]}),
-		.address(Coordenada), // Linha[5:3], Coluna[2:0]
+		.address(CoordenadaFinal), // Linha[5:3], Coluna[2:0]
 	
 		//OUTPUT
 		.v_sync(Vsync), 
@@ -352,13 +371,14 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	    .Saida(BotaoPulso)
 	);
 	
+	/* MODULO DESNECESSÁRIO A MEF2 JÁ FAZ ESSE PROCESSO
 	verifica_tiro VerTiro(
 	    .celula(Saida),
 	    .acerto(acerto),
 	    .erro(erro),
 	    .repetido(repetido),
 	    .tipo_navio(TipoVerifica)
-	);
+	);*/
 
 	display_letra DisplayLinha(
 	    .letra(Cord[5:3]),

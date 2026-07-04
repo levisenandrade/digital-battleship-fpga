@@ -23,12 +23,13 @@ module resetDoAmarelo(
                 if(info == `AMARELO) begin
                     WriteMode <= 1'b1;
                     cor       <= `AZUL;
+						  NextDone  <= 1'b1; // Atraso de um ciclo pra aguardar a escrita na memória - Simeony
                 end
                 else begin
                     WriteMode <= 1'b0;
                     cor       <= info;
+						  NextDone  <= 1'b1; // BYPASS p/ caso receba toggle mas não seja amarelo(N precisa resetar) - Simeony
                 end
-                NextDone <= 1'b1;
             end
             else begin
                 WriteMode <= 1'b0;
