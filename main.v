@@ -236,6 +236,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	.toggle(StartAmRstProc),
 	.info({Saida[3], Saida[2]}),
 	.clk(CLK),
+	.rst(RST),
 	.WriteMode(WAMMODE),
 	.cor(Cor),
 	.Done(AmProcessDone)
@@ -318,7 +319,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 		//INPUT
 		.clk_25mhz(halfClock), 
 		.reset(RST), 
-		.write_enable(modo),
+		.write_enable(Modo),
 		.data({Inf[3], Inf[2]}),
 		.address(Coordenada), // Linha[5:3], Coluna[2:0]
 	
