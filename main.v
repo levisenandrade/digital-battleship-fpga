@@ -6,7 +6,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
 	output [3:0] G;
 	output [3:0] B;
 	output Vsync, Hsync;
-	
+	wire ExisteNavPts;
 	// Divisor de frequência improvisado
 	
 	wire halfClock, d;
@@ -126,7 +126,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable);
     .PshBttn(),
 	 // PSHBTTN COM DETECTOR DE BORDA E DEBOUNCER
 	 
-    .ExisteNavPts(~TodosBarcosDestruidos && game_over),
+    .ExisteNavPts(ExisteNavPts),
 	 // SAÍDA DE UM MóDULO QUE VERIFICA SE PONTOS/NAVIOS != 0
 	 
 	 .rstAmFeito(AmProcessDone),
