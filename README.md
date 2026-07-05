@@ -1,6 +1,6 @@
 # ⚓ Batalha Naval Digital — DE10-Lite FPGA
 
-Projeto desenvolvido implementando o jogo Batalha Naval em hardware digital utilizando a placa **Intel DE10-Lite (MAX 10 — 10M50DAF484C7G)**.
+O projeto consiste em uma implementação em hardware digital do clássico jogo Batalha Naval, utilizando Verilog HDL. Desenvolvido para a placa FPGA **Intel DE10-Lite (MAX 10 — 10M50DAF484C7G)**, o projeto conta com gráficos VGA, máquinas de estados finitos, gerenciamento de memória interna, acréscimo e decréscimo de pontuação e uma arquitetura de hardware modular.
 
 ---
 
