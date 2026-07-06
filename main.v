@@ -1,4 +1,4 @@
-module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HEX4, HEX5);
+module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, HEX0, HEX1, HEX4, HEX5);
 	input CLK, RST, Enable;
 	input [5:0]Cord;
 	output [3:0]Saida; // Valor no LED pra verificação
@@ -10,6 +10,9 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	output [6:0] HEX1; // linha (letra A ~ H)
 	output [6:0] HEX4; // pontuação unidade
 	output [6:0] HEX5; // pontuação dezena
+	
+	//TEMPORARIO
+	output [1:0] TipoDeNavio;
 	
 	wire BotaoDbc, BotaoPulso;
 	wire ExisteNavPts;
@@ -24,6 +27,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	// Divisor de frequência improvisado
 	wire halfClock, d;
 	
+	wire StartAmRstProc;
 	wire Modo;
 	wire [3:0]Inf;
 	wire RstInicialFeito;
@@ -43,12 +47,14 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	wire [1:0]SaidaCorMef2;
 	wire [5:0] lastTry;
 	wire [5:0] Coordenada;
-	wire [1:0]TipoDeNavio;
+	wire [5:0] CoordenadaFinal;
+	//wire [1:0] TipoDeNavio;
 	wire PulsoDestruicao;
 	wire CollorSelection;
 	wire AmProcessDone;
 	wire TglReg6BITS;
 	wire ContDone;
+	wire AzulRst;
 	
 	FlipFlopD FF0(
     .clk(CLK),
@@ -63,7 +69,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	
 	Memoria Mem(
 	.S(Saida), // Cor[1], Cor[0], Tipo[1], Tipo[0]
-	.clk(CLK),
+	.clk(halfClock),
 	.rst(RST),
 	.inf(Inf),
 	.modo(Modo),
@@ -112,7 +118,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	
 	mef_principal MEFGERAL(
 	
-	.Clk(CLK),
+	.Clk(halfClock),
 	.rst(RST),
 	
 	// Esses sinais são os Dones das MEFS 1 e 2
@@ -148,7 +154,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	// SAÍDA DE UM MÓDULO QUE VERIFICA SE
 	// O VALOR NA MEMÓRIA É BRANCO.
 	 
-   .Clk(CLK),
+   .Clk(halfClock),
    .rst(RST),
 	 
    .ModoOprc(MOOPMEF1),
@@ -181,7 +187,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	 .writeEnbl(WAMMODE),
 	 
     .rst(RST), 
-    .Clk(CLK), 
+    .Clk(halfClock), 
 	 
     .ModoMem(MOOPMEF2),
 	 // Saída pra o módulo de Memória, 
@@ -212,7 +218,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	// CONT DESTRUIÇAO ----------------------------------------
 	
 	contador_destruicao contDestruicao(
-    .clk(CLK),
+    .clk(halfClock),
     .rst(RST),
     .acerto(CollorSelection),
 	 .tipo_navio(TipoVerifica),
@@ -222,25 +228,25 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
     .destSB(destSB));
 	 
 	 detector_borda destPAEdgDet(
-    .CLK(CLK),
+    .CLK(halfClock),
     .RST(RST),
     .Entrada(destPA),
     .Saida(pulsoPA));
 	 
 	 detector_borda destFGEdgDet(
-    .CLK(CLK),
+    .CLK(halfClock),
     .RST(RST),
     .Entrada(destFG),
     .Saida(pulsoFG));
 	 
 	 detector_borda destCTEdgDet(
-    .CLK(CLK),
+    .CLK(halfClock),
     .RST(RST),
     .Entrada(destCT),
     .Saida(pulsoCT));
 	 
 	 detector_borda destSBEdgDet(
-    .CLK(CLK),
+    .CLK(halfClock),
     .RST(RST),
     .Entrada(destSB),
     .Saida(pulsoSB));
@@ -254,7 +260,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	
 	// CONT PONTUAÇAO -----------------------------------------
 	contador_pontuacao contPont(
-    .clk(CLK),
+    .clk(halfClock),
     .rst(RST),
     .toggle(TGLContDest),
     .acerto(CollorSelection),
@@ -267,7 +273,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	resetDoAmarelo rstAm(
 	.toggle(StartAmRstProc),
 	.info({Saida[3], Saida[2]}),
-	.clk(CLK),
+	.clk(halfClock),
 	.rst(RST),
 	.WriteMode(WAMMODE),
 	.cor(Cor),
@@ -311,12 +317,12 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 		.Q(lastTry), 
 		.Inp(Cord),
 		.rst(RST),
-		.clk(CLK),
+		.clk(halfClock),
 		.modo(TglReg6BITS));
 
 	// MEF MAIOR DEVE CONTROLAR O TOGGLE e DONE
 	contador_posicionamento Cont(
-		.clk(CLK),
+		.clk(halfClock),
 		.rst(RST),
 		
 		// Toggle para contar +1! ISSO É O PUSH BUTTON COM DBC/EDGDETECTOR
@@ -354,14 +360,14 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	);
 
 	debounce Dbc(
-	    .CLK(CLK),
+	    .CLK(halfClock),
 	    .RST(RST),
 		.Botao(Enable), // enable é o KEY[1]
 	    .Saida(BotaoDbc)
 	);
 	
 	detector_borda EdgDet(
-	    .CLK(CLK),
+	    .CLK(halfClock),
 	    .RST(RST),
 	    .Entrada(BotaoDbc),
 	    .Saida(BotaoPulso)
