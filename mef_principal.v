@@ -45,7 +45,9 @@ module mef_principal(
 				
 				limpeza: if(limpezaFeita) nextstate = tiro;
 				else nextstate = limpeza;
-				
+
+			// Aqui deve ir pra o estado de "revelação dos barcos, não pra o gameover! 
+			// Vai ser o contador 0-63 novamente com a lógica do tipo de embarcaões de Levi - Simeony
             tiro: if(concluido2) nextstate = FimDeJogo;
             else nextstate = tiro;
 				
