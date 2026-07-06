@@ -15,6 +15,10 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	wire ExisteNavPts;
 
 	wire [1:0] TipoVerifica;
+	// correção para o uso dos bits corretos
+	assign TipoVerifica[0] = Saida[0];
+	assign TipoVerifica[1] = Saida[1];
+	
 	wire game_over;
 	
 	// Divisor de frequência improvisado
@@ -52,10 +56,14 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
     .d(d),
     .q(halfClock));
 	 
+
 	 not(d, halfClock);
 	
 	assign TipoVerifica[0] = Saida[0];
 	assign TipoVerifica[1] = Saida[1];
+
+	not(d, halfClock);
+
 	
 	// MEMÓRIA GERAL
 	
