@@ -52,16 +52,16 @@ module Registrador6Bits(Q, Inp, rst, clk, modo);
 	 .slc(modo));
 	 
 	mux1bit Mx1(
-	.A(qff[4]),
-	.B(Q[4]),
-	.slc(Inp),
-	.S(modo));
+	.A(Q[4]),
+	.B(Inp),
+	.slc(modo),
+	.S(qff[4]));
 	
 	mux1bit Mx2(
-	.A(qff[5]),
-	.B(Q[5]),
-	.slc(Inp),
-	.S(modo));
+	.A(Q[5]),
+	.B(Inp),
+	.slc(modo),
+	.S(qff[5]));
 	
 	
 endmodule

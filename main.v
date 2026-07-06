@@ -20,6 +20,32 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	// Divisor de frequência improvisado
 	wire halfClock, d;
 	
+	wire Modo;
+	wire [3:0]Inf;
+	wire RstInicialFeito;
+	wire [5:0]ContadorRst;
+	wire [1:0]Slc;
+	wire MOOPMEF1, MOOPMEF2;
+	wire DoneP1, DoneP2;
+	wire TgglP1, TgglP2;
+	wire eBranco;
+	wire destPA, destFG, destCT, destSB;
+	wire pulsoPA, pulsoFG, pulsoCT, pulsoSB;
+	wire TodosBarcosDestruidos;
+	wire TGLContDest;
+	wire [7:0] pontuacao;
+	wire WAMMODE;
+	wire [1:0]Cor;
+	wire [1:0]SaidaCorMef2;
+	wire [5:0] lastTry;
+	wire [5:0] Coordenada;
+	wire [1:0]TipoDeNavio;
+	wire PulsoDestruicao;
+	wire CollorSelection;
+	wire AmProcessDone;
+	wire TglReg6BITS;
+	wire ContDone;
+	
 	FlipFlopD FF0(
     .clk(CLK),
     .rst(RST),
@@ -28,8 +54,8 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	 
 	 not(d, halfClock);
 	
-	assign TipoVerifica[0] = Saida[2];
-	assign TipoVerifica[1] = Saida[3];
+	assign TipoVerifica[0] = Saida[0];
+	assign TipoVerifica[1] = Saida[1];
 	
 	// MEMÓRIA GERAL
 	
@@ -42,9 +68,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	.coord(CoordenadaFinal));
 	
 	// MUX DE CONTROLE GERAL DA MEMORIA ---------------------------------
-	wire Modo;
-	wire [3:0]Inf;
-	
+
 	mux4para1_4bits MXGeral(
     .A(4'b0100),
     .B({1'b1, 1'b1, TipoDeNavio[1], TipoDeNavio[0]}),
@@ -57,7 +81,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
     .A(1'b1),
     .B(MOOPMEF1),
     .C(MOOPMEF2),
-    .D(1'b0),
+    .D(1'b1),
     .slc(Slc),
     .S(Modo));
 	 
@@ -74,23 +98,15 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
     .slc(AzulRst),
     .S(CoordenadaFinal));
 	 
-	 wire RstInicialFeito;
-	 wire [5:0]ContadorRst;
-	 
 	 contador_64_blocos instancia_contador_64_blocos(
-    .clk(CLK),
+    .clk(halfClock),
     .rst(RST),
     .pintar(AzulRst),
     .q(ContadorRst),
     .done(RstInicialFeito)
 );
 	
-	wire [1:0]Slc;
-	wire MOOPMEF1, MOOPMEF2;
-	
 	// MEFGERAL --------------------------------------------------------------------------------
-	
-	wire DoneP1, DoneP2;
 	
 	mef_principal MEFGERAL(
 	
@@ -111,9 +127,7 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	// Esses Sinais são os toggles de início das MEFS 1 e 2
 	.TglP1(TgglP1),
 	.TglP2(TgglP2));
-	
-	wire TgglP1, TgglP2;
-	
+		
 	// MEFP1 --------------------------------------------------------------------------------
 	MEFPlayer1 instancia_mefp1 (
 	
@@ -191,11 +205,9 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	 
 	 );
 	 
-	wire eBranco;
 	and(eBranco, Saida[3], Saida[2]);
 	
 	// CONT DESTRUIÇAO ----------------------------------------
-	wire destPA, destFG, destCT, destSB;
 	
 	contador_destruicao contDestruicao(
     .clk(CLK),
@@ -206,8 +218,6 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
     .destFG(destFG),
     .destCT(destCT),
     .destSB(destSB));
-	 
-	 wire pulsoPA, pulsoFG, pulsoCT, pulsoSB;
 	 
 	 detector_borda destPAEdgDet(
     .CLK(CLK),
@@ -236,15 +246,11 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	 or(PulsoDestruicao, pulsoPA, pulsoFG, pulsoCT, pulsoSB);
 	// --------------------------------------------------------
 	
-	wire TodosBarcosDestruidos;
 	and(TodosBarcosDestruidos, destPA, destFG, destCT, destSB);
 
 	assign ExisteNavPts = !(TodosBarcosDestruidos) & !game_over; //verifica se houve game over ou se houve a destruição de todos os navios - Levi
 	
 	// CONT PONTUAÇAO -----------------------------------------
-	wire TGLContDest;
-	wire [7:0] pontuacao;
-	
 	contador_pontuacao contPont(
     .clk(CLK),
     .rst(RST),
@@ -255,9 +261,6 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
     .pontuacao(pontuacao),
     .game_over(game_over));
 	 // --------------------------------------------------------
-	
-	wire WAMMODE;
-	wire [1:0]Cor;
 	
 	resetDoAmarelo rstAm(
 	.toggle(StartAmRstProc),
@@ -278,8 +281,6 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	
 	// Seleção de cor MEF2 ----------------------------------
 	
-	wire [1:0]SaidaCorMef2;
-	
 	mux1bit Mx1(
 	.A(1'b1),
 	.B(1'b0),
@@ -297,9 +298,6 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 	// TEMOS QUE PEGAR ESSA SAÍDA DOS MUXS, COLOCAR EM
 	// OUTRO MUX QUE SÓ FUNCIONARÁ QUANDO O TGL DA
 	// MEFP2 ESTIVER ON!
-	
-	wire [5:0] lastTry;
-	wire [5:0] Coordenada;
 	 
 	// LASTTRY se trata do último tiro feito pelo atacante,
 	// Isso é pra resetar o amarelo quando chegar no estado dele!
@@ -315,10 +313,6 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
 		.modo(TglReg6BITS));
 
 	// MEF MAIOR DEVE CONTROLAR O TOGGLE e DONE
-	
-	wire [1:0]TipoDeNavio;
-	wire PulsoDestruicao;
-	
 	contador_posicionamento Cont(
 		.clk(CLK),
 		.rst(RST),

@@ -20,7 +20,7 @@ module contador_64_blocos(
             done <= 1'b0;
 
             if (pintar) begin
-                if (aguardando_escrita_final) begin
+                if (aguardando_ultima_escrita) begin
                     // CICLO 3: A gravação do bloco 63 foi concluída na borda anterior.
                     // Agora resetamos o contador com segurança e avisamos a MEF.
                     q                         <= 6'd0;
