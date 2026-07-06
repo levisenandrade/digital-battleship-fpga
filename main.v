@@ -55,6 +55,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	wire TglReg6BITS;
 	wire ContDone;
 	wire AzulRst;
+	wire eVermelho;
 	
 	FlipFlopD FF0(
     .clk(CLK),
@@ -89,7 +90,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .A(1'b1),
     .B(MOOPMEF1),
     .C(MOOPMEF2),
-    .D(1'b1),
+    .D(1'b0),
     .slc(Slc),
     .S(Modo));
 	 
@@ -124,6 +125,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	// Esses sinais são os Dones das MEFS 1 e 2
 	.concluido1(DoneP1),
 	.concluido2(DoneP2),
+	.limpezaFeita(), // DONE DA LÓGICA DO CONTADOR DE 0-63 COM A LENTE DO BRANCO-AZUL!
 	
 	// Esses sinais serão baseados no processo de reset do sistema, ou seja, pintar tudo de azul!
 	.rstFeito(RstInicialFeito),
@@ -131,6 +133,8 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	// O contador vai passar em todas as casas e vai setar a cor predefinida em azul.
 	// Esse sinal tbm servirá como um Slc no mux das coordenadas, sendo o valor do contador 
 	// como a coordenada a ser alterada. - Simeony
+	
+	.startLimpeza(); // START DA LÓGICA DO CONTADOR DE 0-63 COM A LENTE DO BRANCO-AZUL!
 	
 	// Esses Sinais são os toggles de início das MEFS 1 e 2
 	.TglP1(TgglP1),
@@ -184,6 +188,8 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .CorNaMemoria(eBranco),
 	 // Se BRANCO, então 1, Senão entrada deve ser 0 
 	 
+	 .eVermelho(eVermelho),
+	 
 	 .writeEnbl(WAMMODE),
 	 
     .rst(RST), 
@@ -214,6 +220,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	 );
 	 
 	and(eBranco, Saida[3], Saida[2]);
+	and(eVermelho, ~Saida[3], ~Saida[2]);
 	
 	// CONT DESTRUIÇAO ----------------------------------------
 	
@@ -325,8 +332,8 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 		.clk(halfClock),
 		.rst(RST),
 		
-		// Toggle para contar +1! ISSO É O PUSH BUTTON COM DBC/EDGDETECTOR
-		.confirmar(BotaoPulso),	
+		// Toggle para contar +1! ISSO É O MODO DE OPERAÇÃO DA MEFP1
+		.confirmar(MOOPMEF1),	
 		
 		.tipo_navio(TipoDeNavio),
 		

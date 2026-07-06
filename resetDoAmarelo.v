@@ -1,6 +1,6 @@
 module resetDoAmarelo(
     input clk,
-    input rst, // reset asisncrono adicionado
+    input rst,
     input toggle,
     input [1:0] info,
     output reg WriteMode,
@@ -8,34 +8,44 @@ module resetDoAmarelo(
     output reg Done
 );
 
-    reg NextDone;
+	// REFAZER ESSA MEF DO GEMINI NO FORMATO QUE O PROFESSOR PEDE! - SIMEONY
+
+    reg [1:0] state;
 
     always @(posedge clk or posedge rst) begin
-        if(rst) begin // ADICIONADO: bloco de reset
+        if(rst) begin
             WriteMode <= 1'b0;
-            cor       <= `AZUL;
+            cor       <= `AZUL; 
             Done      <= 1'b0;
-            NextDone  <= 1'b0;
+            state     <= 2'd0;
         end
         else begin
-            Done <= NextDone;
-            if(toggle) begin
-                if(info == `AMARELO) begin
-                    WriteMode <= 1'b1;
-                    cor       <= `AZUL;
-						  NextDone  <= 1'b1; // Atraso de um ciclo pra aguardar a escrita na memória - Simeony
-                end
-                else begin
+            case(state)
+                2'd0: begin // Idle: Esperando o sinal da MEF
+                    Done <= 1'b0;
                     WriteMode <= 1'b0;
-                    cor       <= info;
-						  NextDone  <= 1'b1; // BYPASS p/ caso receba toggle mas não seja amarelo(N precisa resetar) - Simeony
+                    if(toggle) state <= 2'd1; // Mux trocou a coordenada, vai esperar a RAM
                 end
-            end
-            else begin
-                WriteMode <= 1'b0;
-                cor       <= info;
-                NextDone  <= 1'b0;
-            end
+                
+                2'd1: begin // A RAM já enviou a info certa. Pode gravar!
+                    if(info == `AMARELO) begin // Substitua por 
+                        WriteMode <= 1'b1;
+                        cor       <= `AZUL; // Substitua por 
+                    end
+                    else begin
+                        WriteMode <= 1'b0;
+                    end
+                    state <= 2'd2;
+                end
+                
+                2'd2: begin // Finaliza e avisa a MEF
+                    WriteMode <= 1'b0; // Desliga a gravação
+                    Done <= 1'b1;      // Libera a MEF2
+                    if(!toggle) state <= 2'd0; // Fica aqui até a MEF2 desligar o toggle
+                end
+                
+                default: state <= 2'd0;
+            endcase
         end
     end
     

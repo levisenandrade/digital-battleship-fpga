@@ -42,6 +42,7 @@ module MEFPlayer2(
 			else nextstate = ResetAmarelo;
 			
 			VerificarCorMem: if(CorNaMemoria) nextstate = Vermelho;
+			else if (eVermelho) nextstate = ReceberCoordUsr;
 			else nextstate = Amarelo;
 			
 			Vermelho: nextstate = VerifNavPts;
@@ -53,7 +54,7 @@ module MEFPlayer2(
 	end
 	
 	assign ModoMem = (state == Vermelho || state == Amarelo || (state == ResetAmarelo && writeEnbl));
-	assign RegUltTiro = (nextstate == ResetAmarelo);
+	assign RegUltTiro = (state == Vermelho || state == Amarelo);
 	assign RstAmProcess = (state == ResetAmarelo);
 	assign EscolhaCor = (state == Vermelho);
 	assign Done = (state == VerifNavPts && !ExisteNavPts);

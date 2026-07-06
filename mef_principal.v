@@ -4,17 +4,20 @@ module mef_principal(
     input concluido1,  // vem da MEFPlayer1
     input concluido2,  // vem da MEFPlayer2
 	 input rstFeito,
+	 input limpezaFeita,
 	 output startReset,
     output TglP1,      // pulso único pra MEFPlayer1
-    output TglP2       // pulso único pra MEFPlayer2
+    output TglP2,       // pulso único pra MEFPlayer2
+	 output startLimpeza
 );
-    parameter inicio    = 2'd0;
-    parameter posicionamento  = 2'd1;
-    parameter tiro     = 2'd2;
-    parameter FimDeJogo = 2'd3;
+    parameter inicio    = 3'd0;
+    parameter posicionamento  = 3'd1;
+	 parameter limpeza = 3'd2
+    parameter tiro     = 3'd3;
+    parameter FimDeJogo = 3'd4;
   
-    reg [1:0] state;
-    reg [1:0] nextstate;
+    reg [2:0] state;
+    reg [2:0] nextstate;
 
 // 2 fases
 // posicionamento dos navios (MEFPlayer1)
@@ -37,8 +40,11 @@ module mef_principal(
             inicio: if (rstFeito) nextstate = posicionamento;
 				else nextstate = inicio;
 				
-            posicionamento: if(concluido1) nextstate = tiro;
+            posicionamento: if(concluido1) nextstate = limpeza;
             else nextstate = posicionamento;
+				
+				limpeza: if(limpezaFeita) nextstate = tiro;
+				else nextstate = limpeza;
 				
             tiro: if(concluido2) nextstate = FimDeJogo;
             else nextstate = tiro;
@@ -50,6 +56,7 @@ module mef_principal(
     end
     
 	 assign startReset = (state == inicio);
+	 assign startLimpeza = (state == limpeza);
     assign TglP1 = (state == posicionamento);
     assign TglP2 = (state == tiro);
     

@@ -41,25 +41,26 @@ always @(posedge clk or posedge rst) begin
         pontuacao <= PONTUACAO_INICIAL;
         game_over <= 1'b0;
     end
-    else if(toggle && !game_over) begin
-
+    else if(!game_over) begin
+        // O pulso de destruiu chega atrasado, então ele fica FORA do toggle.
+        // Assim que chegar, soma o bônus absoluto.
         if(destruiu) begin
-            pontuacao <= pontuacao + 8'd1 + bonus;
+            pontuacao <= pontuacao + bonus;
         end
-        else if(acerto) begin
-            pontuacao <= pontuacao + 8'd1;
-        end
-        else begin
-            if(pontuacao <= 8'd1) begin
-                pontuacao <= 8'd0;
-                game_over <= 1'b1;
+        else if(toggle) begin
+            if(acerto) begin
+                pontuacao <= pontuacao + 8'd1;
             end
             else begin
-                pontuacao <= pontuacao - 8'd1;
+                if(pontuacao <= 8'd1) begin
+                    pontuacao <= 8'd0;
+                    game_over <= 1'b1;
+                end
+                else begin
+                    pontuacao <= pontuacao - 8'd1;
+                end
             end
         end
-
     end
 end
-
 endmodule
