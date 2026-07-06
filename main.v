@@ -56,12 +56,6 @@ module main(Saida, R, G, B, Vsync, Hsync, Cord, CLK, RST, Enable, HEX0, HEX1, HE
     .d(d),
     .q(halfClock));
 	 
-
-	 not(d, halfClock);
-	
-	assign TipoVerifica[0] = Saida[0];
-	assign TipoVerifica[1] = Saida[1];
-
 	not(d, halfClock);
 
 	
