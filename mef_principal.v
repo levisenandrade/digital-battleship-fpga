@@ -12,7 +12,7 @@ module mef_principal(
 );
     parameter inicio    = 3'd0;
     parameter posicionamento  = 3'd1;
-	 parameter limpeza = 3'd2
+	 parameter limpeza = 3'd2;
     parameter tiro     = 3'd3;
     parameter FimDeJogo = 3'd4;
   

@@ -56,6 +56,11 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	wire ContDone;
 	wire AzulRst;
 	wire eVermelho;
+	wire LimparBrancos;
+	wire StartContador0a63;
+	wire [3:0] InformacaoEscolhida;
+	wire [1:0] CorMascarada;
+	
 	
 	FlipFlopD FF0(
     .clk(CLK),
@@ -79,12 +84,18 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	// MUX DE CONTROLE GERAL DA MEMORIA ---------------------------------
 
 	mux4para1_4bits MXGeral(
-    .A(4'b0100),
+    .A(InformacaoEscolhida),
     .B({1'b1, 1'b1, TipoDeNavio[1], TipoDeNavio[0]}),
     .C({SaidaCorMef2[1],SaidaCorMef2[0],Saida[1], Saida[0]}),
     .D({Cor[1], Cor[0],Saida[1], Saida[0]}),
     .slc(Slc),
     .S(Inf));
+	 
+	mux4Inp1Bit SelInfoPMxGeral (
+   .S(InformacaoEscolhida),
+   .A({CorMascarada[1], CorMascarada[0], Saida[1], Saida[0]}), // SAÍDA DO CODIFICADOR BRANCO-AZUL
+   .B(4'b0100),
+   .slc(AzulRst));
 	 
 	 mux2Bits MXMOOP(
     .A(1'b1),
@@ -94,26 +105,33 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .slc(Slc),
     .S(Modo));
 	 
-	 CodMefSigToSlc SignToSLC(
+	CodMefSigToSlc SignToSLC(
     .A(StartAmRstProc),
     .B(TgglP2),
     .C(TgglP1),
-	 .D(AzulRst),
+	 .D(StartContador0a63),
     .Slc(Slc));
+
+	trocaCor LenteVGA (
+		 .corInp({Saida[3], Saida[2]}),
+		 .corOut(CorMascarada)
+	);
+	 
+	assign StartContador0a63 = (AzulRst | LimparBrancos);
 	
 	mux2para1_6bits CoordAzulRst(
     .A(Coordenada),
     .B(ContadorRst),
-    .slc(AzulRst),
+    .slc(StartContador0a63),
     .S(CoordenadaFinal));
 	 
-	 contador_64_blocos instancia_contador_64_blocos(
+	 contador_64_blocos Cont0a63(
     .clk(halfClock),
     .rst(RST),
-    .pintar(AzulRst),
+    .pintar(StartContador0a63),
     .q(ContadorRst),
-    .done(RstInicialFeito)
-);
+    .done(RstInicialFeito));
+	 
 	
 	// MEFGERAL --------------------------------------------------------------------------------
 	
@@ -125,7 +143,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	// Esses sinais são os Dones das MEFS 1 e 2
 	.concluido1(DoneP1),
 	.concluido2(DoneP2),
-	.limpezaFeita(), // DONE DA LÓGICA DO CONTADOR DE 0-63 COM A LENTE DO BRANCO-AZUL!
+	.limpezaFeita(RstInicialFeito), // DONE DA LÓGICA DO CONTADOR DE 0-63 COM A LENTE DO BRANCO-AZUL!
 	
 	// Esses sinais serão baseados no processo de reset do sistema, ou seja, pintar tudo de azul!
 	.rstFeito(RstInicialFeito),
@@ -134,11 +152,12 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	// Esse sinal tbm servirá como um Slc no mux das coordenadas, sendo o valor do contador 
 	// como a coordenada a ser alterada. - Simeony
 	
-	.startLimpeza(); // START DA LÓGICA DO CONTADOR DE 0-63 COM A LENTE DO BRANCO-AZUL!
+	.startLimpeza(LimparBrancos), // START DA LÓGICA DO CONTADOR DE 0-63 COM A LENTE DO BRANCO-AZUL!
 	
 	// Esses Sinais são os toggles de início das MEFS 1 e 2
 	.TglP1(TgglP1),
-	.TglP2(TgglP2));
+	.TglP2(TgglP2)
+	);
 		
 	// MEFP1 --------------------------------------------------------------------------------
 	MEFPlayer1 instancia_mefp1 (
@@ -284,15 +303,13 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	.rst(RST),
 	.WriteMode(WAMMODE),
 	.cor(Cor),
-	.Done(AmProcessDone)
-	);
+	.Done(AmProcessDone));
 	
 	mux2para1_6bits SelecaoCord(
     .A(Cord),
     .B(lastTry),
     .slc(StartAmRstProc),
-    .S(Coordenada)
-	);
+    .S(Coordenada));
 	
 	// Seleção de cor MEF2 ----------------------------------
 	
@@ -340,15 +357,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 		// Sinal de DONE
 		.fim_posicionamento(ContDone),
 		
-		
-		.casas_restantes()
-		//Saida sANTIGAS
-		//.contPA(),
-		//.contFG(),
-		//.contCT(),
-		//.contSM()
-		// CONTADORES DE CADA TIPO DE BARCO
-		);
+		.casas_restantes());
 	
 	VGA_interface u1(
 		//INPUT
@@ -379,15 +388,6 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	    .Entrada(BotaoDbc),
 	    .Saida(BotaoPulso)
 	);
-	
-	/* MODULO DESNECESSÁRIO A MEF2 JÁ FAZ ESSE PROCESSO
-	verifica_tiro VerTiro(
-	    .celula(Saida),
-	    .acerto(acerto),
-	    .erro(erro),
-	    .repetido(repetido),
-	    .tipo_navio(TipoVerifica)
-	);*/
 
 	display_letra DisplayLinha(
 	    .letra(Cord[5:3]),

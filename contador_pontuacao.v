@@ -1,7 +1,5 @@
 `include "parametros.v"
 
-// MELHORAR INTEGRAÇÃO COM O MÓDULO "CONTADOR_DESTRUIÇÃO" REFORMULADO!
-
 module contador_pontuacao(
     input clk,
     input rst,
