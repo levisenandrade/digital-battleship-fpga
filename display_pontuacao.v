@@ -10,12 +10,12 @@ wire [3:0] unidade;
 assign dezena = pontuacao / 10;
 assign unidade = pontuacao % 10;
 
-display_numero D0(
+display_digito D0(
     .numero(unidade),
     .seg(HEX0)
 );
 
-display_numero D1(
+display_digito D1(
     .numero(dezena),
     .seg(HEX1)
 );
