@@ -1,4 +1,4 @@
-module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, HEX0, HEX1, HEX4, HEX5);
+module main(Saida, R, G, B, Vsync, Hsync, lastTry, Cord, CLK, RST, Enable, HEX0, HEX1, HEX4, HEX5);
 	input CLK, RST, Enable;
 	input [5:0]Cord;
 	output [3:0]Saida; // Valor no LED pra verificação
@@ -12,7 +12,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	output [6:0] HEX5; // pontuação dezena
 	
 	//TEMPORARIO
-	output [1:0] TipoDeNavio;
+	output [5:0] lastTry;
 	
 	wire BotaoDbc, BotaoPulso;
 	wire ExisteNavPts;
@@ -31,7 +31,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	wire Modo;
 	wire [3:0]Inf;
 	wire RstInicialFeito;
-	wire [5:0]Rst;
+	wire [5:0]ContadorRst;
 	wire [1:0]Slc;
 	wire MOOPMEF1, MOOPMEF2;
 	wire DoneP1, DoneP2;
@@ -45,10 +45,10 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	wire WAMMODE;
 	wire [1:0]Cor;
 	wire [1:0]SaidaCorMef2;
-	wire [5:0] lastTry;
+	//wire [5:0] lastTry;
 	wire [5:0] Coordenada;
 	wire [5:0] CoordenadaFinal;
-	//wire [1:0] TipoDeNavio;
+	wire [1:0] TipoDeNavio;
 	wire PulsoDestruicao;
 	wire CollorSelection;
 	wire AmProcessDone;
@@ -56,11 +56,6 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	wire ContDone;
 	wire AzulRst;
 	wire eVermelho;
-	wire LimparBrancos;
-	wire Start0a63;
-	wire [3:0] InformacaoEscolhida;
-	wire [1:0] CorMascarada;
-	wire [1:0] TipoDestruido;
 	
 	FlipFlopD FF0(
     .clk(CLK),
@@ -84,54 +79,41 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	// MUX DE CONTROLE GERAL DA MEMORIA ---------------------------------
 
 	mux4para1_4bits MXGeral(
-    .A(InformacaoEscolhida),
+    .A(4'b0100),
     .B({1'b1, 1'b1, TipoDeNavio[1], TipoDeNavio[0]}),
     .C({SaidaCorMef2[1],SaidaCorMef2[0],Saida[1], Saida[0]}),
     .D({Cor[1], Cor[0],Saida[1], Saida[0]}),
     .slc(Slc),
     .S(Inf));
 	 
-	mux4Inp1Bit SelInfoPMxGeral (
-   .S(InformacaoEscolhida),
-   .A({CorMascarada[1], CorMascarada[0], Saida[1], Saida[0]}), // SAÍDA DO CODIFICADOR BRANCO-AZUL
-   .B(4'b0100),
-   .slc(AzulRst));
-	 
 	 mux2Bits MXMOOP(
     .A(1'b1),
     .B(MOOPMEF1),
     .C(MOOPMEF2),
-    .D(1'b0),
+    .D(WAMMODE),
     .slc(Slc),
     .S(Modo));
 	 
-	CodMefSigToSlc SignToSLC(
-    .A(StartAmRstProc),
+	 CodMefSigToSlc SignToSLC(
+    .A(WAMMODE),
     .B(TgglP2),
     .C(TgglP1),
-	 .D(Start0a63),
+	 .D(AzulRst),
     .Slc(Slc));
-
-	trocaCor LenteVGA (
-		 .corInp({Saida[3], Saida[2]}),
-		 .corOut(CorMascarada)
-	);
-	 
-	assign Start0a63 = (AzulRst | LimparBrancos);
 	
 	mux2para1_6bits CoordAzulRst(
     .A(Coordenada),
     .B(ContadorRst),
-    .slc(StartContador0a63),
+    .slc(AzulRst),
     .S(CoordenadaFinal));
 	 
-	 contador_64_blocos Cont0a63(
+	 contador_64_blocos instancia_contador_64_blocos(
     .clk(halfClock),
     .rst(RST),
-    .pintar(StartContador0a63),
+    .pintar(AzulRst),
     .q(ContadorRst),
-    .done(RstInicialFeito));
-	 
+    .done(RstInicialFeito)
+);
 	
 	// MEFGERAL --------------------------------------------------------------------------------
 	
@@ -143,7 +125,6 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	// Esses sinais são os Dones das MEFS 1 e 2
 	.concluido1(DoneP1),
 	.concluido2(DoneP2),
-	.limpezaFeita(RstInicialFeito), // DONE DA LÓGICA DO CONTADOR DE 0-63 COM A LENTE DO BRANCO-AZUL!
 	
 	// Esses sinais serão baseados no processo de reset do sistema, ou seja, pintar tudo de azul!
 	.rstFeito(RstInicialFeito),
@@ -152,12 +133,9 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	// Esse sinal tbm servirá como um Slc no mux das coordenadas, sendo o valor do contador 
 	// como a coordenada a ser alterada. - Simeony
 	
-	.startLimpeza(LimparBrancos), // START DA LÓGICA DO CONTADOR DE 0-63 COM A LENTE DO BRANCO-AZUL!
-	
 	// Esses Sinais são os toggles de início das MEFS 1 e 2
 	.TglP1(TgglP1),
-	.TglP2(TgglP2)
-	);
+	.TglP2(TgglP2));
 		
 	// MEFP1 --------------------------------------------------------------------------------
 	MEFPlayer1 instancia_mefp1 (
@@ -247,12 +225,11 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .clk(halfClock),
     .rst(RST),
     .acerto(CollorSelection),
-	.tipo_navio(TipoVerifica),
+	 .tipo_navio(TipoVerifica),
     .destPA(destPA),
     .destFG(destFG),
     .destCT(destCT),
     .destSB(destSB));
-	.tipo_destruido(TipoDestruido));
 	 
 	 detector_borda destPAEdgDet(
     .CLK(halfClock),
@@ -278,7 +255,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .Entrada(destSB),
     .Saida(pulsoSB));
 
-	or(PulsoDestruicao, pulsoPA, pulsoFG, pulsoCT, pulsoSB);
+	 or(PulsoDestruicao, pulsoPA, pulsoFG, pulsoCT, pulsoSB);
 	// --------------------------------------------------------
 	
 	and(TodosBarcosDestruidos, destPA, destFG, destCT, destSB);
@@ -292,7 +269,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .toggle(TGLContDest),
     .acerto(CollorSelection),
     .destruiu(PulsoDestruicao), // SINAL DE DESTRUIU DURA APENAS UM CICLO DE CLOCK!
-	.tipo_navio(TipoDestruido),
+	.tipo_navio(TipoVerifica),
     .pontuacao(pontuacao),
     .game_over(game_over));
 	 // --------------------------------------------------------
@@ -310,7 +287,8 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .A(Cord),
     .B(lastTry),
     .slc(StartAmRstProc),
-    .S(Coordenada));
+    .S(Coordenada)
+	);
 	
 	// Seleção de cor MEF2 ----------------------------------
 	
@@ -350,21 +328,29 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 		.clk(halfClock),
 		.rst(RST),
 		
-		// Toggle para contar +1! ISSO É O MODO DE OPERAÇÃO DA MEFP1
-		.confirmar(MOOPMEF1),	
+		// Toggle para contar +1! ISSO É O PUSH BUTTON COM DBC/EDGDETECTOR
+		.confirmar(BotaoPulso),	
 		
 		.tipo_navio(TipoDeNavio),
 		
 		// Sinal de DONE
 		.fim_posicionamento(ContDone),
 		
-		.casas_restantes());
+		
+		.casas_restantes()
+		//Saida sANTIGAS
+		//.contPA(),
+		//.contFG(),
+		//.contCT(),
+		//.contSM()
+		// CONTADORES DE CADA TIPO DE BARCO
+		);
 	
 	VGA_interface u1(
 		//INPUT
 		.clk_25mhz(halfClock), 
 		.reset(RST), 
-		.write_enable(Modo),
+		.write_enable(Modo && ExisteNavPts),
 		.data({Inf[3], Inf[2]}),
 		.address(CoordenadaFinal), // Linha[5:3], Coluna[2:0]
 	
@@ -389,13 +375,22 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	    .Entrada(BotaoDbc),
 	    .Saida(BotaoPulso)
 	);
+	
+	/* MODULO DESNECESSÁRIO A MEF2 JÁ FAZ ESSE PROCESSO
+	verifica_tiro VerTiro(
+	    .celula(Saida),
+	    .acerto(acerto),
+	    .erro(erro),
+	    .repetido(repetido),
+	    .tipo_navio(TipoVerifica)
+	);*/
 
 	display_letra DisplayLinha(
 	    .letra(Cord[5:3]),
 	    .seg(HEX1)
 	);
 	
-	display_numero DisplayColuna(
+	display_digito DisplayColuna(
 	    .numero({1'b0, Cord[2:0]}),
 	    .seg(HEX0)
 	);
