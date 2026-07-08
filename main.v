@@ -87,7 +87,7 @@ module main(Saida, R, G, B, Vsync, Hsync, lastTry, Cord, CLK, RST, Enable, HEX0,
     .S(Inf));
 	 
 	 mux2Bits MXMOOP(
-    .A(1'b1),
+    .A(AzulRst),
     .B(MOOPMEF1),
     .C(MOOPMEF2),
     .D(WAMMODE),
@@ -100,21 +100,29 @@ module main(Saida, R, G, B, Vsync, Hsync, lastTry, Cord, CLK, RST, Enable, HEX0,
     .C(TgglP1),
 	 .D(AzulRst),
     .Slc(Slc));
+	 
+	 trocaCor LenteVGA (
+		 .corInp({Saida[3], Saida[2]}),
+		 .corOut(CorMascarada)
+	);
+	
+	wire LimparBrancos;
+	wire StartContador0a63;
+	assign StartContador0a63 = (AzulRst | LimparBrancos);
 	
 	mux2para1_6bits CoordAzulRst(
     .A(Coordenada),
     .B(ContadorRst),
-    .slc(AzulRst),
+    .slc(StartContador0a63),
     .S(CoordenadaFinal));
 	 
-	 contador_64_blocos instancia_contador_64_blocos(
+	 contador_64_blocos Cont0a63(
     .clk(halfClock),
     .rst(RST),
-    .pintar(AzulRst),
+    .pintar(StartContador0a63),
     .q(ContadorRst),
-    .done(RstInicialFeito)
-);
-	
+    .done(RstInicialFeito));
+	 
 	// MEFGERAL --------------------------------------------------------------------------------
 	
 	mef_principal MEFGERAL(
@@ -125,6 +133,7 @@ module main(Saida, R, G, B, Vsync, Hsync, lastTry, Cord, CLK, RST, Enable, HEX0,
 	// Esses sinais são os Dones das MEFS 1 e 2
 	.concluido1(DoneP1),
 	.concluido2(DoneP2),
+	.limpezaFeita(RstInicialFeito), // DONE DA LÓGICA DO CONTADOR DE 0-63 COM A LENTE DO BRANCO-AZUL!
 	
 	// Esses sinais serão baseados no processo de reset do sistema, ou seja, pintar tudo de azul!
 	.rstFeito(RstInicialFeito),
@@ -133,9 +142,12 @@ module main(Saida, R, G, B, Vsync, Hsync, lastTry, Cord, CLK, RST, Enable, HEX0,
 	// Esse sinal tbm servirá como um Slc no mux das coordenadas, sendo o valor do contador 
 	// como a coordenada a ser alterada. - Simeony
 	
+	.startLimpeza(LimparBrancos), // START DA LÓGICA DO CONTADOR DE 0-63 COM A LENTE DO BRANCO-AZUL!
+	
 	// Esses Sinais são os toggles de início das MEFS 1 e 2
 	.TglP1(TgglP1),
-	.TglP2(TgglP2));
+	.TglP2(TgglP2)
+	);
 		
 	// MEFP1 --------------------------------------------------------------------------------
 	MEFPlayer1 instancia_mefp1 (
@@ -346,12 +358,15 @@ module main(Saida, R, G, B, Vsync, Hsync, lastTry, Cord, CLK, RST, Enable, HEX0,
 		// CONTADORES DE CADA TIPO DE BARCO
 		);
 	
+	wire [1:0]Data;
+	assign Data = (LimparBrancos) ? CorMascarada : Inf[3:2];
+	
 	VGA_interface u1(
 		//INPUT
 		.clk_25mhz(halfClock), 
 		.reset(RST), 
-		.write_enable(Modo && ExisteNavPts),
-		.data({Inf[3], Inf[2]}),
+		.write_enable((Modo | LimparBrancos) && ExisteNavPts),
+		.data(Data),
 		.address(CoordenadaFinal), // Linha[5:3], Coluna[2:0]
 	
 		//OUTPUT
