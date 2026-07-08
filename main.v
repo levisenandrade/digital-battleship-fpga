@@ -31,7 +31,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	wire Modo;
 	wire [3:0]Inf;
 	wire RstInicialFeito;
-	wire [5:0]ContadorRst;
+	wire [5:0]Rst;
 	wire [1:0]Slc;
 	wire MOOPMEF1, MOOPMEF2;
 	wire DoneP1, DoneP2;
@@ -57,10 +57,10 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	wire AzulRst;
 	wire eVermelho;
 	wire LimparBrancos;
-	wire StartContador0a63;
+	wire Start0a63;
 	wire [3:0] InformacaoEscolhida;
 	wire [1:0] CorMascarada;
-	
+	wire [1:0] TipoDestruido;
 	
 	FlipFlopD FF0(
     .clk(CLK),
@@ -109,7 +109,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .A(StartAmRstProc),
     .B(TgglP2),
     .C(TgglP1),
-	 .D(StartContador0a63),
+	 .D(Start0a63),
     .Slc(Slc));
 
 	trocaCor LenteVGA (
@@ -117,7 +117,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 		 .corOut(CorMascarada)
 	);
 	 
-	assign StartContador0a63 = (AzulRst | LimparBrancos);
+	assign Start0a63 = (AzulRst | LimparBrancos);
 	
 	mux2para1_6bits CoordAzulRst(
     .A(Coordenada),
@@ -247,11 +247,12 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .clk(halfClock),
     .rst(RST),
     .acerto(CollorSelection),
-	 .tipo_navio(TipoVerifica),
+	.tipo_navio(TipoVerifica),
     .destPA(destPA),
     .destFG(destFG),
     .destCT(destCT),
     .destSB(destSB));
+	.tipo_destruido(TipoDestruido));
 	 
 	 detector_borda destPAEdgDet(
     .CLK(halfClock),
@@ -277,7 +278,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .Entrada(destSB),
     .Saida(pulsoSB));
 
-	 or(PulsoDestruicao, pulsoPA, pulsoFG, pulsoCT, pulsoSB);
+	or(PulsoDestruicao, pulsoPA, pulsoFG, pulsoCT, pulsoSB);
 	// --------------------------------------------------------
 	
 	and(TodosBarcosDestruidos, destPA, destFG, destCT, destSB);
@@ -291,7 +292,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .toggle(TGLContDest),
     .acerto(CollorSelection),
     .destruiu(PulsoDestruicao), // SINAL DE DESTRUIU DURA APENAS UM CICLO DE CLOCK!
-	.tipo_navio(TipoVerifica),
+	.tipo_navio(TipoDestruido),
     .pontuacao(pontuacao),
     .game_over(game_over));
 	 // --------------------------------------------------------
