@@ -1,7 +1,6 @@
-module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, HEX0, HEX1, HEX4, HEX5);
-	input CLK, RST, Enable;
+module main(R, G, B, Vsync, Hsync, Cord, CLK, RESET, Enable, HEX0, HEX1, HEX4, HEX5);
+	input CLK, RESET, Enable;
 	input [5:0]Cord;
-	output [3:0]Saida; // Valor no LED pra verificação
 	output [3:0] R;
 	output [3:0] G;
 	output [3:0] B;
@@ -10,13 +9,10 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	output [6:0] HEX1; // linha (letra A ~ H)
 	output [6:0] HEX4; // pontuação unidade
 	output [6:0] HEX5; // pontuação dezena
-	
-	//TEMPORARIO
-	output [1:0] TipoDeNavio;
-	
+		
 	wire BotaoDbc, BotaoPulso;
 	wire ExisteNavPts;
-
+	wire [3:0]Saida;
 	wire [1:0] TipoVerifica;
 	// correção para o uso dos bits corretos
 	assign TipoVerifica[0] = Saida[0];
@@ -48,7 +44,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	wire [5:0] lastTry;
 	wire [5:0] Coordenada;
 	wire [5:0] CoordenadaFinal;
-	//wire [1:0] TipoDeNavio;
+	wire [1:0] TipoDeNavio;
 	wire PulsoDestruicao;
 	wire CollorSelection;
 	wire AmProcessDone;
@@ -56,11 +52,9 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	wire ContDone;
 	wire AzulRst;
 	wire eVermelho;
-	wire LimparBrancos;
-	wire StartContador0a63;
-	wire [3:0] InformacaoEscolhida;
-	wire [1:0] CorMascarada;
 	
+	wire RST;
+	assign RST = ~RESET;
 	
 	FlipFlopD FF0(
     .clk(CLK),
@@ -69,7 +63,6 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .q(halfClock));
 	 
 	not(d, halfClock);
-
 	
 	// MEMÓRIA GERAL
 	
@@ -84,40 +77,39 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	// MUX DE CONTROLE GERAL DA MEMORIA ---------------------------------
 
 	mux4para1_4bits MXGeral(
-    .A(InformacaoEscolhida),
+    .A(4'b0100),
     .B({1'b1, 1'b1, TipoDeNavio[1], TipoDeNavio[0]}),
     .C({SaidaCorMef2[1],SaidaCorMef2[0],Saida[1], Saida[0]}),
     .D({Cor[1], Cor[0],Saida[1], Saida[0]}),
     .slc(Slc),
     .S(Inf));
 	 
-	mux4Inp1Bit SelInfoPMxGeral (
-   .S(InformacaoEscolhida),
-   .A({CorMascarada[1], CorMascarada[0], Saida[1], Saida[0]}), // SAÍDA DO CODIFICADOR BRANCO-AZUL
-   .B(4'b0100),
-   .slc(AzulRst));
-	 
 	 mux2Bits MXMOOP(
-    .A(1'b1),
+    .A(AzulRst),
     .B(MOOPMEF1),
     .C(MOOPMEF2),
-    .D(1'b0),
+    .D(WAMMODE),
     .slc(Slc),
     .S(Modo));
 	 
-	CodMefSigToSlc SignToSLC(
-    .A(StartAmRstProc),
+	 CodMefSigToSlc SignToSLC(
+    .A(WAMMODE),
     .B(TgglP2),
     .C(TgglP1),
 	 .D(StartContador0a63),
     .Slc(Slc));
-
-	trocaCor LenteVGA (
+	 
+	 trocaCor LenteVGA (
 		 .corInp({Saida[3], Saida[2]}),
 		 .corOut(CorMascarada)
 	);
-	 
-	assign StartContador0a63 = (AzulRst | LimparBrancos);
+	
+	wire [1:0]CorGameOver;
+	assign CorGameOver = game_over ? ( (Saida[3:2] == 2'b00 || Saida[3:2] == 2'b11) ? 2'b10 : 2'b01 ) : Data;	
+	
+	wire LimparBrancos;
+	wire StartContador0a63;
+	assign StartContador0a63 = (AzulRst | LimparBrancos | game_over);
 	
 	mux2para1_6bits CoordAzulRst(
     .A(Coordenada),
@@ -132,7 +124,6 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .q(ContadorRst),
     .done(RstInicialFeito));
 	 
-	
 	// MEFGERAL --------------------------------------------------------------------------------
 	
 	mef_principal MEFGERAL(
@@ -296,6 +287,8 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .game_over(game_over));
 	 // --------------------------------------------------------
 	
+	
+	
 	resetDoAmarelo rstAm(
 	.toggle(StartAmRstProc),
 	.info({Saida[3], Saida[2]}),
@@ -309,7 +302,8 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
     .A(Cord),
     .B(lastTry),
     .slc(StartAmRstProc),
-    .S(Coordenada));
+    .S(Coordenada)
+	);
 	
 	// Seleção de cor MEF2 ----------------------------------
 	
@@ -349,7 +343,7 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 		.clk(halfClock),
 		.rst(RST),
 		
-		// Toggle para contar +1! ISSO É O MODO DE OPERAÇÃO DA MEFP1
+		// Toggle para contar +1! ISSO É O PUSH BUTTON COM DBC/EDGDETECTOR
 		.confirmar(MOOPMEF1),	
 		
 		.tipo_navio(TipoDeNavio),
@@ -357,14 +351,25 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 		// Sinal de DONE
 		.fim_posicionamento(ContDone),
 		
-		.casas_restantes());
+		
+		.casas_restantes()
+		//Saida sANTIGAS
+		//.contPA(),
+		//.contFG(),
+		//.contCT(),
+		//.contSM()
+		// CONTADORES DE CADA TIPO DE BARCO
+		);
+	
+	wire [1:0]Data;
+	assign Data = (LimparBrancos) ? CorMascarada : Inf[3:2];
 	
 	VGA_interface u1(
 		//INPUT
 		.clk_25mhz(halfClock), 
 		.reset(RST), 
-		.write_enable(Modo),
-		.data({Inf[3], Inf[2]}),
+		.write_enable( (Modo && ExisteNavPts) | LimparBrancos | game_over ),
+		.data(CorGameOver),
 		.address(CoordenadaFinal), // Linha[5:3], Coluna[2:0]
 	
 		//OUTPUT
@@ -374,11 +379,11 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 		.G(G),
 		.B(B)
 	);
-
+	
 	debounce Dbc(
 	    .CLK(halfClock),
 	    .RST(RST),
-		.Botao(Enable), // enable é o KEY[1]
+		.Botao(~Enable), // enable é o KEY[1]
 	    .Saida(BotaoDbc)
 	);
 	
@@ -388,15 +393,30 @@ module main(Saida, R, G, B, Vsync, Hsync, TipoDeNavio, Cord, CLK, RST, Enable, H
 	    .Entrada(BotaoDbc),
 	    .Saida(BotaoPulso)
 	);
+	
+	/* MODULO DESNECESSÁRIO A MEF2 JÁ FAZ ESSE PROCESSO
+	verifica_tiro VerTiro(
+	    .celula(Saida),
+	    .acerto(acerto),
+	    .erro(erro),
+	    .repetido(repetido),
+	    .tipo_navio(TipoVerifica)
+	);*/
+	
+	wire [6:0]Disp1;
+	wire [6:0]Disp2;
+	
+	assign HEX1 = (game_over) ? 6'b1111111: Disp1;
+	assign HEX0 = (game_over) ? 6'b1111111: Disp2;
 
 	display_letra DisplayLinha(
 	    .letra(Cord[5:3]),
-	    .seg(HEX1)
+	    .seg(Disp1)
 	);
 	
-	display_numero DisplayColuna(
+	display_digito DisplayColuna(
 	    .numero({1'b0, Cord[2:0]}),
-	    .seg(HEX0)
+	    .seg(Disp2)
 	);
 	
 	display_pontuacao DisplayPont(

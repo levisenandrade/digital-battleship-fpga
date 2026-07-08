@@ -17,8 +17,8 @@ parameter PONTUACAO_INICIAL = 8'd7;
 
 // adição ao desttruir o navio
 parameter BONUS_PORTA_AVIOES = 8'd8;
-parameter BONUS_FRAGATA      = 8'd6;
-parameter BONUS_CORVETA      = 8'd4;
+parameter BONUS_FRAGATA      = 8'd6; 
+parameter BONUS_CORVETA      = 8'd4; 
 parameter BONUS_SUBMARINO    = 8'd10;
 
 reg [7:0] bonus;

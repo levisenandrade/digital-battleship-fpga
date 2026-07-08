@@ -53,13 +53,13 @@ module Registrador6Bits(Q, Inp, rst, clk, modo);
 	 
 	mux1bit Mx1(
 	.A(Q[4]),
-	.B(Inp),
+	.B(Inp[4]),
 	.slc(modo),
 	.S(qff[4]));
 	
 	mux1bit Mx2(
 	.A(Q[5]),
-	.B(Inp),
+	.B(Inp[5]),
 	.slc(modo),
 	.S(qff[5]));
 	
