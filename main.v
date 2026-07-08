@@ -329,7 +329,7 @@ module main(Saida, R, G, B, Vsync, Hsync, lastTry, Cord, CLK, RST, Enable, HEX0,
 		.rst(RST),
 		
 		// Toggle para contar +1! ISSO É O PUSH BUTTON COM DBC/EDGDETECTOR
-		.confirmar(BotaoPulso),	
+		.confirmar(MOOPMEF1),	
 		
 		.tipo_navio(TipoDeNavio),
 		
@@ -365,7 +365,7 @@ module main(Saida, R, G, B, Vsync, Hsync, lastTry, Cord, CLK, RST, Enable, HEX0,
 	debounce Dbc(
 	    .CLK(halfClock),
 	    .RST(RST),
-		.Botao(Enable), // enable é o KEY[1]
+		.Botao(~Enable), // enable é o KEY[1]
 	    .Saida(BotaoDbc)
 	);
 	
