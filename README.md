@@ -6,8 +6,6 @@
 
 Implementação em hardware do clássico jogo **Batalha Naval**, desenvolvida em **Verilog HDL** para a **Intel DE10-Lite FPGA (MAX 10 — 10M50DAF484C7G)**. O projeto utiliza gráficos VGA, máquinas de estados finitos (MEFs), memória interna para o tabuleiro, gerenciamento de pontuação e uma arquitetura de hardware totalmente modular.
 
----
-
 ## 🎮 Visão Geral do Jogo
 
 O jogo é executado em **modo desafio**:
