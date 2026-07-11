@@ -1,112 +1,140 @@
 # ⚓ Batalha Naval Digital — DE10-Lite FPGA
 
-O projeto consiste em uma implementação em hardware digital do clássico jogo Batalha Naval, utilizando Verilog HDL. Desenvolvido para a placa FPGA **Intel DE10-Lite (MAX 10 — 10M50DAF484C7G)**, o projeto conta com gráficos VGA, máquinas de estados finitos, gerenciamento de memória interna, acréscimo e decréscimo de pontuação e uma arquitetura de hardware modular.
+<p align="center">
+  🇧🇷 Português | <a href="README.en.md">🇺🇸 English</a>
+</p>
+
+Implementação em hardware do clássico jogo **Batalha Naval**, desenvolvida em **Verilog HDL** para a **Intel DE10-Lite FPGA (MAX 10 — 10M50DAF484C7G)**. O projeto utiliza gráficos VGA, máquinas de estados finitos (MEFs), memória interna para o tabuleiro, gerenciamento de pontuação e uma arquitetura de hardware totalmente modular.
 
 ---
 
-## 🎮 Descrição do Jogo
+## 🎮 Visão Geral do Jogo
 
-O jogo funciona em modo **desafio**: o Jogador 1 posiciona os navios no tabuleiro e o Jogador 2 tenta afundá-los sem saber onde estão.
+O jogo é executado em **modo desafio**:
 
-- Tabuleiro único de **8×8 células**
-- Jogador 1 posiciona os navios usando switches e botão de confirmação
-- Jogador 2 atira nas coordenadas tentando destruir todos os navios
-- O jogo termina quando todos os navios são destruídos **ou** a pontuação zera
+* O **Jogador 1** posiciona todos os navios no tabuleiro.
+* O **Jogador 2** tenta localizar e destruir os navios sem conhecer suas posições.
+
+### Funcionalidades
+
+* Tabuleiro de jogo 8×8
+* Posicionamento de navios utilizando switches e botão de confirmação
+* Interface gráfica via VGA
+* Sistema de pontuação
+* Detecção automática de vitória e derrota
+* Arquitetura totalmente modular
+* Implementado inteiramente em Verilog HDL
+
+A partida termina quando:
+
+* Todos os navios são destruídos; ou
+* A pontuação do jogador chega a zero.
 
 ---
 
 ## 🚢 Navios
 
-| Navio | Tamanho | Código |
-|---|---|---|
+| Navio        | Tamanho   | Código  |
+| ------------ | --------- | ------- |
 | Porta-aviões | 5 células | `2'b00` |
-| Fragata | 4 células | `2'b01` |
-| Corveta | 3 células | `2'b10` |
-| Submarino | 2 células | `2'b11` |
+| Fragata      | 4 células | `2'b01` |
+| Corveta      | 3 células | `2'b10` |
+| Submarino    | 2 células | `2'b11` |
 
 ---
 
-## 🎨 Codificação de Cores
+## 🎨 Codificação das Cores
 
-| Cor | Código | Significado |
-|---|---|---|
-| Branco | `2'b11` | Navio intacto |
-| Azul | `2'b01` | Água não atingida |
-| Vermelho | `2'b00` | Navio atingido (acerto) |
-| Amarelo | `2'b10` | Água atingida (erro) |
+| Cor      | Código  | Significado          |
+| -------- | ------- | -------------------- |
+| Branco   | `2'b11` | Navio intacto        |
+| Azul     | `2'b01` | Água não atingida    |
+| Vermelho | `2'b00` | Navio atingido       |
+| Amarelo  | `2'b10` | Água atingida (erro) |
 
-Cada célula da memória armazena **4 bits**: `[3:2]` = cor, `[1:0]` = tipo do navio.
+Cada posição do tabuleiro armazena **4 bits**:
+
+* **[3:2]** → Cor da célula
+* **[1:0]** → Tipo do navio
 
 ---
 
-## 🔧 Hardware Utilizado
+## 🔧 Plataforma de Hardware
 
-- **Placa:** Intel DE10-Lite (MAX 10 — 10M50DAF484C7G)
-- **Saída de vídeo:** VGA (módulo `VGA_interface` fornecido)
-- **Entrada:** 6 switches + 2 botões
-- **Displays:** 4 displays de 7 segmentos (HEX0, HEX1, HEX4, HEX5)
+* **Placa:** Intel DE10-Lite (MAX 10 — 10M50DAF484C7G)
+* **Saída de vídeo:** VGA
+* **Entradas:** 6 switches + 2 botões
+* **Displays:** Quatro displays de sete segmentos
 
 ### Mapeamento de Hardware
 
-| Componente | Função |
-|---|---|
-| `SW[2:0]` | Coluna (1–8) |
-| `SW[5:3]` | Linha (A–H) |
-| `KEY[0]` | Reset (RST) |
-| `KEY[1]` | Confirmar |
-| `HEX0` | Coluna (número 1–8) |
-| `HEX1` | Linha (letra A–H) |
-| `HEX4` | Pontuação — unidade |
-| `HEX5` | Pontuação — dezena |
-| VGA | Tabuleiro 8×8 |
+| Componente | Função               |
+| ---------- | -------------------- |
+| `SW[2:0]`  | Coluna (1–8)         |
+| `SW[5:3]`  | Linha (A–H)          |
+| `KEY[0]`   | Reset                |
+| `KEY[1]`   | Confirmar            |
+| `HEX0`     | Exibição da coluna   |
+| `HEX1`     | Exibição da linha    |
+| `HEX4`     | Unidade da pontuação |
+| `HEX5`     | Dezena da pontuação  |
+| VGA        | Tabuleiro 8×8        |
 
 ---
 
-## 🏗️ Arquitetura do Projeto
+## 🏗️ Arquitetura do Sistema
 
-### Fluxo Geral
+### Fluxo do Jogo
 
+```text
+Reset
+    ↓
+Inicialização do Tabuleiro (Azul)
+    ↓
+Posicionamento dos Navios (Jogador 1)
+    ↓
+Fase de Ataques (Jogador 2)
+    ↓
+Fim de Jogo
 ```
-Reset → Pintar tabuleiro de azul → Posicionamento (P1) → Tiro (P2) → Fim de jogo
-```
 
-### Módulos Implementados
+### Módulos do Projeto
 
-| Módulo | Descrição |
-|---|---|
-| `main` | Top-level module — integra todos os módulos |
-| `mef_principal` | MEF mestre — orquestra as fases do jogo |
-| `MEFPlayer1` | MEF de posicionamento dos navios |
-| `MEFPlayer2` | MEF da fase de tiro |
-| `Memoria` | Banco de 64 registradores de 4 bits (tabuleiro) |
-| `Registrador4Bits` | Registrador com enable — base da memória |
-| `Registrador6Bits` | Registrador de 6 bits — guarda última coordenada de tiro |
-| `contador_posicionamento` | Controla sequência de posicionamento dos navios |
-| `contador_destruicao` | Rastreia hits por navio, detecta destruição |
-| `contador_pontuacao` | Gerencia pontuação e detecta game over |
-| `contador_64_blocos` | Percorre as 64 células para reset do tabuleiro |
-| `verifica_tiro` | Classifica o resultado de um tiro (acerto/erro/repetido) |
-| `resetDoAmarelo` | Apaga o amarelo da última jogada errada |
-| `debounce` | Elimina bouncing dos botões |
-| `detector_borda` | Gera pulso único na borda de subida |
-| `display_letra` | Decoder 7 segmentos para letras A–H |
-| `display_numero` | Decoder 7 segmentos para números 0–9 |
-| `display_pontuacao` | Exibe pontuação em dois displays |
-| `FlipFlopD` | Flip-flop D — base dos registradores |
-| `mux1bit` | Multiplexador 2:1 de 1 bit |
-| `mux4Inp1Bit` | Multiplexador 2:1 de 4 bits |
-| `mux2Bits` | Multiplexador 4:1 de 1 bit |
-| `mux4para1_4bits` | Multiplexador 4:1 de 4 bits |
-| `mux2para1_6bits` | Multiplexador 2:1 de 6 bits |
-| `CodMefSigToSlc` | Codificador de sinais das MEFs para seleção do mux |
-| `parametros.v` | Definições de cores e tipos de navio |
-| `VGA_interface` | Interface VGA (fornecida — não modificar) |
+| Módulo                    | Descrição                                                         |
+| ------------------------- | ----------------------------------------------------------------- |
+| `main`                    | Módulo principal que integra todo o sistema                       |
+| `mef_principal`           | Máquina de estados principal que controla o fluxo do jogo         |
+| `MEFPlayer1`              | Controlador da fase de posicionamento dos navios                  |
+| `MEFPlayer2`              | Controlador da fase de ataques                                    |
+| `Memoria`                 | Memória do tabuleiro implementada como 64 registradores de 4 bits |
+| `Registrador4Bits`        | Registrador de 4 bits com enable                                  |
+| `Registrador6Bits`        | Armazena a última coordenada utilizada                            |
+| `contador_posicionamento` | Controla a sequência de posicionamento dos navios                 |
+| `contador_destruicao`     | Rastreia acertos e detecta quando um navio é destruído            |
+| `contador_pontuacao`      | Atualiza a pontuação e detecta fim de jogo                        |
+| `contador_64_blocos`      | Percorre as 64 posições do tabuleiro durante a inicialização      |
+| `verifica_tiro`           | Determina se um tiro foi acerto, erro ou repetição                |
+| `resetDoAmarelo`          | Remove a marcação amarela da jogada anterior                      |
+| `debounce`                | Elimina o efeito de bouncing dos botões                           |
+| `detector_borda`          | Gera um pulso único na borda de subida                            |
+| `display_letra`           | Decoder de sete segmentos para as linhas (A–H)                    |
+| `display_numero`          | Decoder de sete segmentos para números                            |
+| `display_pontuacao`       | Exibe a pontuação atual                                           |
+| `FlipFlopD`               | Flip-flop D utilizado na construção dos registradores             |
+| `mux1bit`                 | Multiplexador 2:1 de 1 bit                                        |
+| `mux4Inp1Bit`             | Multiplexador 2:1 de 4 bits                                       |
+| `mux2Bits`                | Multiplexador 4:1 de 1 bit                                        |
+| `mux4para1_4bits`         | Multiplexador 4:1 de 4 bits                                       |
+| `mux2para1_6bits`         | Multiplexador 2:1 de 6 bits                                       |
+| `CodMefSigToSlc`          | Codifica os sinais das MEFs para seleção dos multiplexadores      |
+| `parametros.v`            | Definições globais de cores e tipos de navios                     |
+| `VGA_interface`           | Interface VGA fornecida (não modificar)                           |
 
 ---
 
-## 📁 Estrutura de Arquivos
+## 📁 Estrutura do Projeto
 
-```
+```text
 /
 ├── main.v
 ├── parametros.v
@@ -134,10 +162,8 @@ Reset → Pintar tabuleiro de azul → Posicionamento (P1) → Tiro (P2) → Fim
 ├── mux4para1_4bits.v
 ├── mux2para1_6bits.v
 ├── CodMefSigToSlc.v
-├── VGA_interface.v  ← não modificar
-└── pbl323.qsf       ← pinout para DE10-Lite
+├── VGA_interface.v
+└── pbl323.qsf
 ```
 
-## 📚 Disciplina
-
-**TEC498** — Universidade Estadual de Feira de Santana (UEFS)
+---
